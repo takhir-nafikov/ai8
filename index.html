@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI8 Учебный сайт</title>
+    <link rel="stylesheet" href="./src/styles.css" />
+    <script src="./public/app-config.js"></script>
+    <script type="module" src="./src/main.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <p class="eyebrow">Минимальный статический проект</p>
+        <h1 class="hero-title">AI8: учебные уроки по работе с AI</h1>
+        <p class="hero-copy">
+          Небольшой сайт без фреймворков: чистые HTML, CSS и JavaScript, готовый к локальному запуску и
+          дальнейшему деплою на GitHub Pages.
+        </p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Список уроков</h2>
+          <p>Урок 1 уже доступен. Следующие уроки подготовлены как расширяемые заглушки.</p>
+        </div>
+        <div id="lesson-list" class="lesson-grid" aria-live="polite">
+          <a class="lesson-card lesson-card-link" href="./lessons/lesson-1.html">
+            <span class="lesson-state lesson-state-live">Доступен</span>
+            <h3>Урок 1</h3>
+            <p>Форма отправки текста и получение ответа через proxy endpoint для DeepSeek.</p>
+          </a>
+
+          <article class="lesson-card lesson-card-disabled" aria-disabled="true">
+            <span class="lesson-state lesson-state-muted">Скоро</span>
+            <h3>Урок 2</h3>
+            <p>Заглушка для следующего урока.</p>
+          </article>
+
+          <article class="lesson-card lesson-card-disabled" aria-disabled="true">
+            <span class="lesson-state lesson-state-muted">Скоро</span>
+            <h3>Урок 3</h3>
+            <p>Заглушка для следующего урока.</p>
+          </article>
+
+          <article class="lesson-card lesson-card-disabled" aria-disabled="true">
+            <span class="lesson-state lesson-state-muted">Скоро</span>
+            <h3>Урок 4</h3>
+            <p>Будущий урок по работе с ответами API.</p>
+          </article>
+
+          <article class="lesson-card lesson-card-disabled" aria-disabled="true">
+            <span class="lesson-state lesson-state-muted">Скоро</span>
+            <h3>Урок 5</h3>
+            <p>Будущий урок по структуре статических приложений.</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

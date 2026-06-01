@@ -1,0 +1,13 @@
+{
+  "name": "ai8-study-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server/dev-server.mjs",
+    "preview": "node server/static-server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
