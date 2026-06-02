@@ -6,12 +6,18 @@
 - Frontend stack: plain HTML, CSS, vanilla JS.
 - Main pages:
   - `index.html`
-  - `lessons/lesson-1.html`
-- Frontend scripts/styles:
+  - `lessons/lesson1/index.html`
+  - `lessons/lesson2/index.html`
+- Legacy compatibility page:
+  - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
+- Lesson structure:
+  - `lessons/lesson1/{index.html, lesson1.css, lesson1.js}`
+  - `lessons/lesson2/{index.html, lesson2.css, lesson2.js}`
+- Shared frontend files:
   - `src/main.js`
-  - `src/lesson1.js`
   - `src/config.js`
   - `src/styles.css`
+  - `src/lesson1.js` now works as a shim import for the relocated lesson 1 script
 
 ## Runtime Flow
 
@@ -20,15 +26,26 @@
 - Static preview server: `server/static-server.mjs`
 - Frontend loads runtime config from `GET /api/config`
 - Frontend sends lesson request to `POST /api/deepseek`
-- Request body is JSON with:
+- Lesson 1 request body is JSON with:
   - `input`
   - `model`
+- Lesson 2 request body is JSON with:
+  - `model`
+  - `messages`
+  - optional `temperature`
+  - optional `max_tokens`
+  - optional `stop`
+- Proxy accepts either `input` or non-empty `messages`
+- Proxy prepends the system message on the backend side
+- Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
 
 ## DeepSeek Notes
 
 - Actual working model name is `deepseek-v4-flash`
+- `deepseek-v4-pro` is also accepted by proxy allowlist, but default runtime config is still `deepseek-v4-flash`
 - Old `deepseek-flash` name became outdated for current DeepSeek API
-- `.env.example`, `public/app-config.js`, `src/config.js`, `README.md`, and `server/dev-server.mjs` were aligned to `deepseek-v4-flash`
+- Chat Completions endpoint in use: `https://api.deepseek.com/chat/completions`
+- `.env.example`, `public/app-config.js`, `src/config.js`, `README.md`, and `server/dev-server.mjs` were aligned to current DeepSeek V4 naming
 - API key must stay only in `.env` / backend environment, never in frontend
 
 ## Important Fixes Already Done
@@ -41,12 +58,18 @@
 - Added basic console logging for endpoint/model/response status
 - Added visible config error block on lesson page
 - Added `server/*.log` to `.gitignore`
+- Grouped each lesson into its own folder
+- Added lesson 2 with request settings UI
+- Added scrollable response block and scrollable request body block for lesson 2
+- Added in-memory conversation history for lesson 2
+- Added history reset button for lesson 2
+- Updated proxy to support both old `input` flow and new `messages` flow
 
 ## Git State / Branching
 
 - Remote `origin` -> `https://github.com/takhir-nafikov/ai8`
-- Working branch used for this task: `task-1`
-- Initial feature commit already pushed to `origin/task-1`
+- Current working branch for this task: `task-2`
+- `task-2` was created locally from `task-1`
 
 ## Local Run
 
@@ -63,3 +86,5 @@
 - If browser submits to URL, user likely opened page via `file://` or JS failed to load
 - If port `4173` is busy, stop old node process before restart
 - Keep README and `.env.example` in sync with actual server behavior
+- For lesson 2, inspect returned `requestBody` to verify `messages` history and optional params
+- Keep lesson 1 backward-compatible while evolving proxy for lesson 2

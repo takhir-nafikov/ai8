@@ -5,7 +5,8 @@
 ## Что внутри
 
 - Главная страница со списком уроков.
-- Страница `Урок 1` с формой, кнопкой отправки и состояниями `loading / error / success`.
+- Страница `Урок 1` с базовой формой отправки и состояниями `loading / error / success`.
+- Страница `Урок 2` с расширенными настройками Chat Completions и локальной историей контекста.
 - Фронтенд обращается не напрямую к DeepSeek, а к настраиваемому backend endpoint `apiEndpoint`.
 - Локальный `dev server` умеет:
   - работать как mock, если API ключ не задан;
@@ -18,7 +19,17 @@
 .
 ├─ index.html
 ├─ lessons/
-│  └─ lesson-1.html
+│  ├─ lesson-1.html
+│  ├─ lesson1/
+│  │  ├─ index.html
+│  │  ├─ lesson1.css
+│  │  └─ lesson1.js
+│  └─ lesson2/
+│     ├─ index.html
+│     ├─ lesson2.css
+│     └─ lesson2.js
+├─ memory/
+│  └─ memory.md
 ├─ public/
 │  └─ app-config.js
 ├─ server/
@@ -65,7 +76,7 @@ npm run dev
 ```
 
 Сайт будет доступен по адресу `http://localhost:4173`.
-Страница `Урок 1` должна открываться через `http://localhost:4173`, а не через `file://...`, иначе submit/fetch и runtime-config будут работать некорректно.
+Страницы уроков должны открываться через `http://localhost:4173`, а не через `file://...`, иначе submit/fetch и runtime-config будут работать некорректно.
 
 ## Запуск без npm
 
@@ -73,7 +84,7 @@ npm run dev
 
 - `index.html`
 
-Но для проверки `Урока 1` нужен локальный сервер, потому что форма обращается к `/api/deepseek`.
+Но для проверки `Урока 1` и `Урока 2` нужен локальный сервер, потому что формы обращаются к `/api/deepseek`.
 
 ## Локальный просмотр только статики
 
@@ -81,7 +92,7 @@ npm run dev
 npm run preview
 ```
 
-## Как проверить урок 1 локально
+## Как проверить уроки локально
 
 ### Вариант 1. Mock режим
 
@@ -117,6 +128,12 @@ npm run dev
 - отправлять `POST` JSON-запрос на `/api/deepseek`;
 - получать ответ от локального proxy-сервера.
 
+### Урок 1
+
+URL:
+
+- `http://localhost:4173/lessons/lesson1/`
+
 Пример body запроса:
 
 ```json
@@ -125,6 +142,53 @@ npm run dev
   "model": "deepseek-v4-flash"
 }
 ```
+
+Старый URL `lessons/lesson-1.html` сохранён как совместимый редирект на новую папку урока.
+
+### Урок 2
+
+URL:
+
+- `http://localhost:4173/lessons/lesson2/`
+
+Урок 2 повторяет базовый сценарий lesson 1, но дополнительно:
+
+- показывает `endpoint` и полное `request body`;
+- позволяет включать `temperature`, `max_tokens` и `stop`;
+- хранит локальную историю сообщений в памяти страницы;
+- при новом запросе отправляет полный массив `messages` в формате Chat Completions API;
+- позволяет очистить историю отдельной кнопкой.
+
+Пример body запроса:
+
+```json
+{
+  "model": "deepseek-v4-flash",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Первый вопрос"
+    },
+    {
+      "role": "assistant",
+      "content": "Первый ответ"
+    },
+    {
+      "role": "user",
+      "content": "Второй вопрос"
+    }
+  ],
+  "temperature": 0.2,
+  "max_tokens": 300,
+  "stop": ["стоп"]
+}
+```
+
+Proxy не требует одновременной передачи `input` и `messages`:
+
+- lesson 1 продолжает работать через `input`;
+- lesson 2 использует `messages`;
+- сервер добавляет системное сообщение на backend-стороне.
 
 ## Почему нельзя хранить API key на GitHub Pages
 
@@ -168,7 +232,8 @@ window.__APP_CONFIG__ = {
 Для GitHub Pages надежнее использовать обычные HTML-файлы:
 
 - `index.html`
-- `lessons/lesson-1.html`
+- `lessons/lesson1/index.html`
+- `lessons/lesson2/index.html`
 
 Так не нужен клиентский router и не возникает проблем с fallback-маршрутизацией на статическом хостинге.
 
@@ -176,7 +241,8 @@ window.__APP_CONFIG__ = {
 
 Чтобы добавить следующий урок:
 
-1. Создайте новую страницу в `lessons/`.
-2. Добавьте новый JavaScript-модуль в `src/`, если нужна логика.
-3. Обновите список уроков в `src/main.js`.
-4. Если используете локальный сервер, просто перезапустите `npm run dev`.
+1. Создайте новую папку урока внутри `lessons/`.
+2. Положите в неё собственные `index.html`, CSS и JS файла урока.
+3. При необходимости переиспользуйте общий `src/styles.css` и `src/config.js`.
+4. Обновите список уроков на главной странице.
+5. Если используете локальный сервер, просто перезапустите `npm run dev`.

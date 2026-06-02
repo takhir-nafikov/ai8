@@ -53,7 +53,8 @@ function isPublicPath(pathname) {
 }
 
 function getFilePath(urlPath) {
-  const pathname = urlPath === "/" ? "/index.html" : urlPath;
+  const pathname =
+    urlPath === "/" ? "/index.html" : urlPath.endsWith("/") ? `${urlPath}index.html` : urlPath;
   if (!isPublicPath(pathname)) {
     return null;
   }
@@ -115,6 +116,76 @@ function extractAnswer(payload) {
   return "";
 }
 
+const allowedModels = new Set(["deepseek-v4-flash", "deepseek-v4-pro"]);
+
+function parseTemperature(value) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return null;
+  }
+
+  return value >= 0 && value <= 2 ? value : null;
+}
+
+function parseMaxTokens(value) {
+  if (!Number.isInteger(value)) {
+    return null;
+  }
+
+  return value > 0 ? value : null;
+}
+
+function parseStop(value) {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const stop = value
+    .filter((item) => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 16);
+
+  return stop.length > 0 ? stop : null;
+}
+
+function parseMessages(value) {
+  if (!Array.isArray(value)) {
+    return null;
+  }
+
+  const messages = value
+    .filter((item) => item && typeof item === "object")
+    .map((item) => ({
+      role: typeof item.role === "string" ? item.role.trim() : "",
+      content: typeof item.content === "string" ? item.content.trim() : ""
+    }))
+    .filter((item) => (item.role === "user" || item.role === "assistant" || item.role === "system") && item.content);
+
+  return messages.length > 0 ? messages : null;
+}
+
+function buildUpstreamRequestBody({ input, messages, model, temperature, maxTokens, stop }) {
+  return {
+    model,
+    messages: [
+      {
+        role: "system",
+        content: "You are a concise assistant for a study website."
+      },
+      ...(messages ?? [
+        {
+          role: "user",
+          content: input
+        }
+      ])
+    ],
+    ...(temperature !== null ? { temperature } : {}),
+    ...(maxTokens !== null ? { max_tokens: maxTokens } : {}),
+    ...(stop ? { stop } : {}),
+    stream: false
+  };
+}
+
 const localEnv = await loadLocalEnv();
 const env = {
   DEEPSEEK_API_KEY: process.env.DEEPSEEK_API_KEY ?? localEnv.DEEPSEEK_API_KEY ?? "",
@@ -144,10 +215,14 @@ const server = createServer(async (request, response) => {
       const rawBody = await readRequestBody(request);
       const payload = JSON.parse(rawBody || "{}");
       const input = typeof payload.input === "string" ? payload.input.trim() : "";
+      const messages = parseMessages(payload.messages);
       const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+      const temperature = parseTemperature(payload.temperature);
+      const maxTokens = parseMaxTokens(payload.max_tokens);
+      const stop = parseStop(payload.stop);
 
-      if (!input) {
-        sendJson(response, 400, { error: "Field 'input' is required." });
+      if (!input && !messages) {
+        sendJson(response, 400, { error: "Field 'input' or non-empty 'messages' is required." });
         return;
       }
 
@@ -161,44 +236,43 @@ const server = createServer(async (request, response) => {
         return;
       }
 
-      if (model !== "deepseek-v4-flash") {
+      if (!allowedModels.has(model)) {
         sendJson(response, 500, {
-          error: "Only the deepseek-v4-flash model is allowed for this project."
+          error: "Only DeepSeek V4 chat completion models are allowed for this project."
         });
         return;
       }
 
+      const upstreamRequestBody = buildUpstreamRequestBody({
+        input,
+        messages,
+        model,
+        temperature,
+        maxTokens,
+        stop
+      });
+
       if (env.MOCK_DEEPSEEK === "true" || !env.DEEPSEEK_API_KEY) {
         console.log("[deepseek] Mock mode enabled. endpoint:", env.DEEPSEEK_API_URL, "model:", model);
+        console.log("[deepseek] request body:", JSON.stringify(upstreamRequestBody));
         sendJson(response, 200, {
           answer: `Mock response for: ${input}`,
           model,
-          mocked: true
+          mocked: true,
+          requestBody: upstreamRequestBody
         });
         return;
       }
 
       console.log("[deepseek] endpoint:", env.DEEPSEEK_API_URL, "model:", model);
+      console.log("[deepseek] request body:", JSON.stringify(upstreamRequestBody));
       const upstreamResponse = await fetch(env.DEEPSEEK_API_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
         },
-        body: JSON.stringify({
-          model,
-          messages: [
-            {
-              role: "system",
-              content: "You are a concise assistant for a study website."
-            },
-            {
-              role: "user",
-              content: input
-            }
-          ],
-          stream: false
-        })
+        body: JSON.stringify(upstreamRequestBody)
       });
 
       console.log("[deepseek] upstream status:", upstreamResponse.status);
@@ -217,7 +291,8 @@ const server = createServer(async (request, response) => {
       sendJson(response, 200, {
         answer: answer || "DeepSeek returned an empty response.",
         model,
-        mocked: false
+        mocked: false,
+        requestBody: upstreamRequestBody
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected proxy error.";

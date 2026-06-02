@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Урок 1 · AI8</title>
+    <link rel="stylesheet" href="./lesson1.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson1.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Урок 1</p>
+          <h1>Запрос к DeepSeek через безопасный proxy endpoint</h1>
+          <p>
+            Фронтенд отправляет текст на настраиваемый endpoint. Локально этот endpoint может работать как mock
+            или как proxy к DeepSeek API.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/deepseek">
+          <label class="field-label" for="prompt-input">Введите текст</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Объясни, как работает REST API простыми словами."
+            required
+          ></textarea>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p id="response-meta" class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <pre id="response-output" class="response-output">Ответ появится здесь.</pre>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

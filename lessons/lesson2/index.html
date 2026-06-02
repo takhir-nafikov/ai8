@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Урок 2 · AI8</title>
+    <link rel="stylesheet" href="./lesson2.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson2.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Урок 2</p>
+          <h1>Настройка параметров Chat Completions для DeepSeek</h1>
+          <p>
+            Эта страница повторяет базовый сценарий урока 1, но позволяет управлять температурой, лимитом
+            токенов и stop-словом для запроса к DeepSeek через безопасный proxy endpoint.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/deepseek">
+          <label class="field-label" for="prompt-input">Введите текст</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Составь короткий план изучения REST API."
+            required
+          ></textarea>
+
+          <fieldset class="settings-fieldset">
+            <legend class="field-label">Настройки запроса</legend>
+
+            <div class="settings-grid">
+              <section class="setting-group" aria-labelledby="temperature-group-label">
+                <h2 id="temperature-group-label" class="setting-title">Температура</h2>
+                <label class="setting-option">
+                  <input id="temperature-low" type="checkbox" checked />
+                  <span>Низкая температура (0.2)</span>
+                </label>
+                <label class="setting-option">
+                  <input id="temperature-high" type="checkbox" />
+                  <span>Высокая температура (1.3)</span>
+                </label>
+              </section>
+
+              <section class="setting-group" aria-labelledby="tokens-group-label">
+                <h2 id="tokens-group-label" class="setting-title">Максимум токенов</h2>
+                <label class="setting-option">
+                  <input id="tokens-limited" type="checkbox" checked />
+                  <span>Ограничить до 300 токенов</span>
+                </label>
+                <label class="setting-option">
+                  <input id="tokens-unlimited" type="checkbox" />
+                  <span>Не ограничивать max_tokens</span>
+                </label>
+              </section>
+
+              <section class="setting-group" aria-labelledby="stop-group-label">
+                <h2 id="stop-group-label" class="setting-title">Stop-слово</h2>
+                <label class="setting-option">
+                  <input id="stop-enabled" type="checkbox" />
+                  <span>Использовать stop-слово <code>стоп</code></span>
+                </label>
+                <label class="setting-option">
+                  <input id="stop-disabled" type="checkbox" checked />
+                  <span>Не использовать stop-слово</span>
+                </label>
+              </section>
+            </div>
+          </fieldset>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+            <button id="clear-history-button" class="secondary-button" type="button">Очистить историю</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p id="response-meta" class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p id="history-meta" class="response-meta">Сообщений в контексте: <strong id="history-count">0</strong></p>
+          <div class="payload-block">
+            <p id="request-meta" class="response-meta">Параметры запроса</p>
+            <pre id="request-body-label" class="payload-output">ещё не отправлены</pre>
+          </div>
+          <pre id="response-output" class="response-output response-output-scrollable">Ответ появится здесь.</pre>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
