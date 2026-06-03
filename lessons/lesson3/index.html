@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Урок 3 · AI8</title>
+    <link rel="stylesheet" href="./lesson3.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson3.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Урок 3</p>
+          <h1>Модификация промпта перед отправкой в DeepSeek</h1>
+          <p>
+            Эта страница повторяет структуру урока 2, но вместо параметров модели управляет тем, как именно
+            формулируется пользовательский запрос перед отправкой в Chat Completions.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/deepseek">
+          <label class="field-label" for="prompt-input">Введите текст</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Объясни, как спроектировать REST API для небольшого сервиса."
+            required
+          ></textarea>
+
+          <fieldset class="settings-fieldset">
+            <legend class="field-label">Настройки промпта</legend>
+
+            <div class="settings-grid">
+              <section class="setting-group" aria-labelledby="step-mode-label">
+                <h2 id="step-mode-label" class="setting-title">Пошаговый режим</h2>
+                <label class="setting-option">
+                  <input id="step-by-step-checkbox" type="checkbox" />
+                  <span>Добавить к вопросу инструкцию <code>Решай пошагово.</code></span>
+                </label>
+              </section>
+
+              <section class="setting-group" aria-labelledby="prompt-mode-label">
+                <h2 id="prompt-mode-label" class="setting-title">Режим prompt-engineering</h2>
+                <label class="setting-option">
+                  <input id="prompt-builder-checkbox" type="checkbox" />
+                  <span>Попросить модель сначала составить качественный копируемый промпт вместо прямого решения.</span>
+                </label>
+              </section>
+
+              <section class="setting-group" aria-labelledby="experts-mode-label">
+                <h2 id="experts-mode-label" class="setting-title">Несколько экспертов</h2>
+                <label class="setting-option">
+                  <input id="experts-checkbox" type="checkbox" />
+                  <span>Попросить отдельные ответы от аналитика, инженера и критика.</span>
+                </label>
+              </section>
+            </div>
+          </fieldset>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+            <button id="clear-history-button" class="secondary-button" type="button">Очистить историю</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p id="response-meta" class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p id="history-meta" class="response-meta">Сообщений в контексте: <strong id="history-count">0</strong></p>
+          <div class="payload-block">
+            <p id="request-meta" class="response-meta">Параметры запроса</p>
+            <pre id="request-body-label" class="payload-output">ещё не отправлены</pre>
+          </div>
+          <pre id="response-output" class="response-output response-output-scrollable">Ответ появится здесь.</pre>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
