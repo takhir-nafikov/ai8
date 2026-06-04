@@ -1,0 +1,59 @@
+@import "../lesson3/lesson3.css";
+
+.response-output {
+  white-space: normal;
+  line-height: 1.6;
+}
+
+.response-output > :first-child {
+  margin-top: 0;
+}
+
+.response-output > :last-child {
+  margin-bottom: 0;
+}
+
+.response-output p,
+.response-output ul,
+.response-output ol,
+.response-output pre,
+.response-output blockquote,
+.response-output h1,
+.response-output h2,
+.response-output h3,
+.response-output h4 {
+  margin: 0 0 1rem;
+}
+
+.response-output ul,
+.response-output ol {
+  padding-left: 1.4rem;
+}
+
+.response-output li + li {
+  margin-top: 0.35rem;
+}
+
+.response-output pre {
+  overflow-x: auto;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(34, 27, 22, 0.06);
+  border: 1px solid rgba(73, 55, 31, 0.12);
+}
+
+.response-output code {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.response-output :not(pre) > code {
+  padding: 0.15rem 0.35rem;
+  border-radius: 6px;
+  background: rgba(34, 27, 22, 0.08);
+}
+
+.response-output blockquote {
+  padding-left: 1rem;
+  border-left: 3px solid rgba(145, 90, 33, 0.35);
+  color: var(--text-soft);
+}

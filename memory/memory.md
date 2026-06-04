@@ -9,12 +9,16 @@
   - `lessons/lesson1/index.html`
   - `lessons/lesson2/index.html`
   - `lessons/lesson3/index.html`
+  - `lessons/lesson4/index.html`
+  - `lessons/lesson4/index.html`
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
   - `lessons/lesson1/{index.html, lesson1.css, lesson1.js}`
   - `lessons/lesson2/{index.html, lesson2.css, lesson2.js}`
   - `lessons/lesson3/{index.html, lesson3.css, lesson3.js}`
+  - `lessons/lesson4/{index.html, lesson4.css, lesson4.js}`
+  - `lessons/lesson4/{index.html, lesson4.css, lesson4.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -41,6 +45,12 @@
   - `model`
   - `messages`
 - Lesson 3 modifies the final user message on the client side before sending it to Chat Completions
+- Lesson 4 request body is JSON with:
+  - `model`
+  - `messages`
+  - optional `temperature`
+- Lesson 4 keeps lesson 3 history/preview flow but controls `temperature` instead of modifying prompt text
+- Lesson 4 renders model answers as HTML from a small safe Markdown renderer on the client side
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
@@ -84,6 +94,7 @@
 - Current working branch for this task: `Task3`
 - `task-2` was created locally from `task-1`
 - `Task3` was created locally from `task-2`
+- `task-4` was created locally from `Task3`
 
 ## Local Run
 
@@ -105,3 +116,6 @@
 - Lesson 3 now exists with three prompt-modifying checkboxes: step-by-step mode, prompt-only mode, and multi-expert mode
 - Lesson 3 reuses lesson 2 visual style by importing `../lesson2/lesson2.css`
 - If lesson 3 behavior is changed later, inspect `lessons/lesson3/lesson3.js` first: prompt transformation happens in `buildPrompt()`
+- Task 4 added lesson 4 based on lesson 3 UI, but with three mutually exclusive temperature checkboxes: `0`, `0.7`, `1.2`
+- Lesson 4 shows a more helpful network error if local dev server is unavailable
+- Lesson 4 Markdown renderer now handles common cases like headings, lists, code blocks, inline code, blockquotes, `**bold**`, and `*italic*`
