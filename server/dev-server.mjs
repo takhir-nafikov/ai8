@@ -116,6 +116,28 @@ function extractAnswer(payload) {
   return "";
 }
 
+function extractUsage(payload) {
+  const usage = payload?.usage;
+
+  if (!usage || typeof usage !== "object") {
+    return null;
+  }
+
+  const promptTokens = Number.isFinite(usage.prompt_tokens) ? usage.prompt_tokens : null;
+  const completionTokens = Number.isFinite(usage.completion_tokens) ? usage.completion_tokens : null;
+  const totalTokens = Number.isFinite(usage.total_tokens) ? usage.total_tokens : null;
+
+  if (promptTokens === null && completionTokens === null && totalTokens === null) {
+    return null;
+  }
+
+  return {
+    prompt_tokens: promptTokens,
+    completion_tokens: completionTokens,
+    total_tokens: totalTokens
+  };
+}
+
 const allowedModels = new Set(["deepseek-v4-flash", "deepseek-v4-pro"]);
 
 function parseTemperature(value) {
@@ -259,7 +281,8 @@ const server = createServer(async (request, response) => {
           answer: `Mock response for: ${input}`,
           model,
           mocked: true,
-          requestBody: upstreamRequestBody
+          requestBody: upstreamRequestBody,
+          usage: null
         });
         return;
       }
@@ -288,11 +311,13 @@ const server = createServer(async (request, response) => {
       }
 
       const answer = extractAnswer(upstreamPayload);
+      const usage = extractUsage(upstreamPayload);
       sendJson(response, 200, {
         answer: answer || "DeepSeek returned an empty response.",
         model,
         mocked: false,
-        requestBody: upstreamRequestBody
+        requestBody: upstreamRequestBody,
+        usage
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected proxy error.";

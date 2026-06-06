@@ -1,0 +1,29 @@
+@import "../lesson4/lesson4.css";
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+.metric-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(145, 90, 33, 0.14);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(248, 241, 231, 0.88));
+}
+
+.metric-label {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.metric-value {
+  font-size: 1rem;
+  line-height: 1.35;
+  word-break: break-word;
+  white-space: pre-line;
+}
