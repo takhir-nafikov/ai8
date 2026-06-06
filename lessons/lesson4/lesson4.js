@@ -93,6 +93,47 @@ function renderInlineMarkdown(text) {
   return withEmphasis.replace(/@@INLINECODE(\d+)@@/g, (_, index) => inlineCodeTokens[Number(index)] ?? "");
 }
 
+function isUnorderedListBlock(block) {
+  return block
+    .split("\n")
+    .every((line) => /^[-*]\s+/.test(line.trim()));
+}
+
+function isOrderedListBlock(block) {
+  return block
+    .split("\n")
+    .every((line) => /^\d+\.\s+/.test(line.trim()));
+}
+
+function renderList(block, ordered = false) {
+  const items = block
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const content = ordered ? line.replace(/^\d+\.\s+/, "") : line.replace(/^[-*]\s+/, "");
+      return `<li>${renderInlineMarkdown(content)}</li>`;
+    })
+    .join("");
+
+  return ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`;
+}
+
+function renderBlockquote(block) {
+  const quote = block
+    .split("\n")
+    .map((line) => line.replace(/^>\s?/, "").trim())
+    .filter(Boolean)
+    .map((line) => renderInlineMarkdown(line))
+    .join("<br />");
+
+  return `<blockquote><p>${quote}</p></blockquote>`;
+}
+
+function renderParagraph(block) {
+  return `<p>${renderInlineMarkdown(block.replace(/\n/g, "<br />"))}</p>`;
+}
+
 function renderMarkdown(markdown) {
   const normalized = escapeHtml(markdown).replace(/\r\n/g, "\n").trim();
 
@@ -122,33 +163,19 @@ function renderMarkdown(markdown) {
         return `<h${level}>${renderInlineMarkdown(headingMatch[2])}</h${level}>`;
       }
 
-      if (block.startsWith(">")) {
-        const quote = block
-          .split("\n")
-          .map((line) => line.replace(/^>\s?/, ""))
-          .join(" ");
-        return `<blockquote><p>${renderInlineMarkdown(quote)}</p></blockquote>`;
+      if (block.split("\n").every((line) => line.trim().startsWith(">"))) {
+        return renderBlockquote(block);
       }
 
-      if (/^[-*]\s+/m.test(block)) {
-        const items = block
-          .split("\n")
-          .filter((line) => /^[-*]\s+/.test(line))
-          .map((line) => `<li>${renderInlineMarkdown(line.replace(/^[-*]\s+/, ""))}</li>`)
-          .join("");
-        return `<ul>${items}</ul>`;
+      if (isUnorderedListBlock(block)) {
+        return renderList(block, false);
       }
 
-      if (/^\d+\.\s+/m.test(block)) {
-        const items = block
-          .split("\n")
-          .filter((line) => /^\d+\.\s+/.test(line))
-          .map((line) => `<li>${renderInlineMarkdown(line.replace(/^\d+\.\s+/, ""))}</li>`)
-          .join("");
-        return `<ol>${items}</ol>`;
+      if (isOrderedListBlock(block)) {
+        return renderList(block, true);
       }
 
-      return `<p>${renderInlineMarkdown(block.replace(/\n/g, "<br />"))}</p>`;
+      return renderParagraph(block);
     })
     .join("");
 

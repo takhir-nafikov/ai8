@@ -119,3 +119,4 @@
 - Task 4 added lesson 4 based on lesson 3 UI, but with three mutually exclusive temperature checkboxes: `0`, `0.7`, `1.2`
 - Lesson 4 shows a more helpful network error if local dev server is unavailable
 - Lesson 4 Markdown renderer now handles common cases like headings, lists, code blocks, inline code, blockquotes, `**bold**`, and `*italic*`
+- Lesson 4 Markdown renderer was later strengthened to handle real model answers more stably, especially lists, blockquotes, and inline emphasis like `**Клиент-сервер**`
