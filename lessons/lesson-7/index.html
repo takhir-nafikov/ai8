@@ -4,20 +4,84 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Урок 7 · AI8</title>
-    <link rel="stylesheet" href="../lesson-10/week-placeholder.css" />
+    <link rel="stylesheet" href="./lesson-7.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson-7.js"></script>
   </head>
   <body>
     <main class="page-shell">
       <nav class="back-nav">
         <a class="back-link" href="../../index.html">← На главную</a>
       </nav>
+
       <section class="panel lesson-panel">
         <div class="panel-header">
           <p class="eyebrow">Урок 7</p>
-          <h1>Страница второй недели</h1>
-          <p>Урок выделен в отдельную папку и отдельную страницу. Контент можно развивать в следующих задачах.</p>
+          <h1>Диалог с DeepSeek с сохранением истории в браузере</h1>
+          <p>
+            Страница повторяет структуру урока 6, но сохраняет историю диалога в браузере. После
+            повторного открытия урока контекст восстанавливается автоматически, и диалог продолжается с
+            теми же сообщениями.
+          </p>
         </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/deepseek">
+          <label class="field-label" for="prompt-input">Введите вопрос</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Составь план изучения JavaScript на 4 недели."
+            required
+          ></textarea>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+            <button id="view-history-button" class="secondary-button" type="button">Посмотреть историю</button>
+            <button id="clear-history-button" class="secondary-button" type="button">Очистить историю</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p class="response-meta">
+            Сообщений в сохранённом контексте: <strong id="history-count">0</strong>
+          </p>
+          <div class="payload-block">
+            <p class="response-meta">Тело запроса и используемый класс</p>
+            <pre id="request-body-label" class="payload-output">ещё не отправлены</pre>
+          </div>
+          <div id="response-output" class="response-output response-output-scrollable">Ответ появится здесь.</div>
+        </section>
       </section>
     </main>
+
+    <dialog id="history-dialog" class="history-dialog">
+      <div class="history-dialog-content">
+        <div class="history-dialog-header">
+          <div>
+            <p class="eyebrow">История урока 7</p>
+            <h2 class="history-dialog-title">Сохранённый диалог</h2>
+          </div>
+          <button id="close-history-button" class="secondary-button" type="button">Закрыть</button>
+        </div>
+
+        <div id="history-list" class="history-list">
+          <p class="history-empty">История пока пуста.</p>
+        </div>
+
+        <div class="button-row">
+          <button id="dialog-clear-history-button" class="secondary-button" type="button">Очистить историю</button>
+        </div>
+      </div>
+    </dialog>
   </body>
 </html>
