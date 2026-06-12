@@ -1,0 +1,10 @@
+@import "../lesson4/lesson4.css";
+
+.response-output {
+  white-space: normal;
+  line-height: 1.6;
+}
+
+.response-output p {
+  margin: 0;
+}

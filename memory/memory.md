@@ -11,6 +11,11 @@
   - `lessons/lesson3/index.html`
   - `lessons/lesson4/index.html`
   - `lessons/lesson5/index.html`
+  - `lessons/lesson-6/index.html`
+  - `lessons/lesson-7/index.html`
+  - `lessons/lesson-8/index.html`
+  - `lessons/lesson-9/index.html`
+  - `lessons/lesson-10/index.html`
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
@@ -19,10 +24,16 @@
   - `lessons/lesson3/{index.html, lesson3.css, lesson3.js}`
   - `lessons/lesson4/{index.html, lesson4.css, lesson4.js}`
   - `lessons/lesson5/{index.html, lesson5.css, lesson5.js}`
+  - `lessons/lesson-6/{index.html, lesson-6.css, lesson-6.js, llm-caller.js}`
+  - `lessons/lesson-7/{index.html}`
+  - `lessons/lesson-8/{index.html}`
+  - `lessons/lesson-9/{index.html}`
+  - `lessons/lesson-10/{index.html, week-placeholder.css}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
   - `src/styles.css`
+  - `src/week-divider.css`
   - `src/lesson1.js` now works as a shim import for the relocated lesson 1 script
 
 ## Runtime Flow
@@ -56,6 +67,10 @@
   - `messages`
 - Lesson 5 keeps lesson 4 history/preview flow but switches between `deepseek-v4-flash` and `deepseek-v4-pro`
 - Lesson 5 measures response time on the client side and shows model/latency/token usage metadata
+- Lesson 6 request body is JSON with:
+  - `model`
+  - `messages`
+- Lesson 6 keeps question/answer/request-preview flow but sends requests through the `LLMCaller` class
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
@@ -92,15 +107,28 @@
   - ask the model to build a copyable high-quality prompt instead of solving directly
   - ask for separate viewpoints from analyst, engineer, and critic
 - Lesson 3 keeps in-memory conversation history and still shows endpoint plus full request body
+- Task 4 added lesson 4 based on lesson 3 UI, but with three mutually exclusive temperature checkboxes: `0`, `0.7`, `1.2`
+- Lesson 4 shows a more helpful network error if local dev server is unavailable
+- Lesson 4 Markdown renderer now handles common cases like headings, lists, code blocks, inline code, blockquotes, `**bold**`, and `*italic*`
+- Lesson 4 Markdown renderer was later strengthened to handle real model answers more stably, especially lists, blockquotes, and inline emphasis like `**Клиент-сервер**`
+- Task 5 added lesson 5 based on lesson 4 UI, but with two mutually exclusive model checkboxes for Flash and Pro
+- Lesson 5 shows selected model, client-side response time, and token usage metadata if the API/proxy returns `usage`
+- Proxy now passes `usage` through to the frontend so later UI can show token cost if pricing is added manually
+- Lesson 5 now estimates token cost using configured Flash/Pro prices; because cache hit/miss is unknown from API, input and total cost are shown as a range
+- Task 6 added a week divider on the main page and a `Вторая неделя` block with lessons 6-10
+- Task 6 created separate folders and separate pages for `lesson-6` through `lesson-10`
+- Task 6 added lesson 6 with a question field, answer block, request preview, and history reset button
+- Task 6 moved lesson 6 DeepSeek request building, sending, response parsing, and error handling into `lessons/lesson-6/llm-caller.js`
 
 ## Git State / Branching
 
 - Remote `origin` -> `https://github.com/takhir-nafikov/ai8`
-- Current working branch for this task: `Task3`
+- Current working branch for this task: `task-6`
 - `task-2` was created locally from `task-1`
 - `Task3` was created locally from `task-2`
 - `task-4` was created locally from `Task3`
 - `task-5` was created locally from `task-4`
+- `task-6` was created locally from `task-5`
 
 ## Local Run
 
@@ -122,11 +150,4 @@
 - Lesson 3 now exists with three prompt-modifying checkboxes: step-by-step mode, prompt-only mode, and multi-expert mode
 - Lesson 3 reuses lesson 2 visual style by importing `../lesson2/lesson2.css`
 - If lesson 3 behavior is changed later, inspect `lessons/lesson3/lesson3.js` first: prompt transformation happens in `buildPrompt()`
-- Task 4 added lesson 4 based on lesson 3 UI, but with three mutually exclusive temperature checkboxes: `0`, `0.7`, `1.2`
-- Lesson 4 shows a more helpful network error if local dev server is unavailable
-- Lesson 4 Markdown renderer now handles common cases like headings, lists, code blocks, inline code, blockquotes, `**bold**`, and `*italic*`
-- Lesson 4 Markdown renderer was later strengthened to handle real model answers more stably, especially lists, blockquotes, and inline emphasis like `**Клиент-сервер**`
-- Task 5 added lesson 5 based on lesson 4 UI, but with two mutually exclusive model checkboxes for Flash and Pro
-- Lesson 5 shows selected model, client-side response time, and token usage metadata if the API/proxy returns `usage`
-- Proxy now passes `usage` through to the frontend so later UI can show token cost if pricing is added manually
-- Lesson 5 now estimates token cost using configured Flash/Pro prices; because cache hit/miss is unknown from API, input and total cost are shown as a range
+- For lesson 6, inspect `lessons/lesson-6/llm-caller.js` first if the request format or error handling changes

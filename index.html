@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI8 Учебный сайт</title>
     <link rel="stylesheet" href="./src/styles.css" />
+    <link rel="stylesheet" href="./src/week-divider.css" />
     <script src="./public/app-config.js"></script>
     <script type="module" src="./src/main.js"></script>
   </head>
@@ -22,7 +23,7 @@
       <section class="panel">
         <div class="panel-header">
           <h2>Список уроков</h2>
-          <p>Уроки 1, 2, 3, 4 и 5 уже доступны. Следующие уроки подготовлены как расширяемые заглушки.</p>
+          <p>Уроки 1–10 доступны как отдельные страницы внутри папки <code>lessons</code>.</p>
         </div>
         <div id="lesson-list" class="lesson-grid" aria-live="polite">
           <a class="lesson-card lesson-card-link" href="./lessons/lesson1/">
@@ -53,6 +54,44 @@
             <span class="lesson-state lesson-state-live">Доступен</span>
             <h3>Урок 5</h3>
             <p>Сравнение моделей DeepSeek Flash и Pro с замером времени ответа и статистикой токенов.</p>
+          </a>
+        </div>
+
+        <div class="week-divider" role="separator" aria-label="Переход ко второй неделе">
+          <span class="week-divider-line" aria-hidden="true"></span>
+          <span class="week-divider-label">Вторая неделя</span>
+          <span class="week-divider-line" aria-hidden="true"></span>
+        </div>
+
+        <div class="lesson-grid" aria-live="polite">
+          <a class="lesson-card lesson-card-link" href="./lessons/lesson-6/">
+            <span class="lesson-state lesson-state-live">Доступен</span>
+            <h3>Урок 6</h3>
+            <p>Вызов DeepSeek через отдельный класс <code>LLMCaller</code> и отдельную страницу урока.</p>
+          </a>
+
+          <a class="lesson-card lesson-card-link" href="./lessons/lesson-7/">
+            <span class="lesson-state lesson-state-live">Доступен</span>
+            <h3>Урок 7</h3>
+            <p>Отдельная страница второй недели, подготовленная для дальнейшего наполнения.</p>
+          </a>
+
+          <a class="lesson-card lesson-card-link" href="./lessons/lesson-8/">
+            <span class="lesson-state lesson-state-live">Доступен</span>
+            <h3>Урок 8</h3>
+            <p>Отдельная страница второй недели, подготовленная для дальнейшего наполнения.</p>
+          </a>
+
+          <a class="lesson-card lesson-card-link" href="./lessons/lesson-9/">
+            <span class="lesson-state lesson-state-live">Доступен</span>
+            <h3>Урок 9</h3>
+            <p>Отдельная страница второй недели, подготовленная для дальнейшего наполнения.</p>
+          </a>
+
+          <a class="lesson-card lesson-card-link" href="./lessons/lesson-10/">
+            <span class="lesson-state lesson-state-live">Доступен</span>
+            <h3>Урок 10</h3>
+            <p>Отдельная страница второй недели, подготовленная для дальнейшего наполнения.</p>
           </a>
         </div>
       </section>

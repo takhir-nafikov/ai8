@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Урок 6 · AI8</title>
+    <link rel="stylesheet" href="./lesson-6.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson-6.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Урок 6</p>
+          <h1>Вызов DeepSeek через класс LLMCaller</h1>
+          <p>
+            Страница повторяет базовый сценарий урока 5: есть поле вопроса, поле ответа и превью тела
+            запроса. Прямой <code>fetch</code> из страницы убран: запрос к LLM теперь инкапсулирован в
+            отдельном классе <code>LLMCaller</code>.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/deepseek">
+          <label class="field-label" for="prompt-input">Введите вопрос</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Объясни разницу между let, const и var в JavaScript."
+            required
+          ></textarea>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+            <button id="clear-history-button" class="secondary-button" type="button">Очистить историю</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p id="response-meta" class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p class="response-meta">Сообщений в контексте: <strong id="history-count">0</strong></p>
+          <div class="payload-block">
+            <p class="response-meta">Тело запроса и используемый класс</p>
+            <pre id="request-body-label" class="payload-output">ещё не отправлены</pre>
+          </div>
+          <div id="response-output" class="response-output response-output-scrollable">Ответ появится здесь.</div>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
