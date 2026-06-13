@@ -1,0 +1,35 @@
+@import "../lesson5/lesson5.css";
+
+.file-panel {
+  display: grid;
+  gap: 0.65rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(145, 90, 33, 0.14);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(248, 241, 231, 0.9));
+}
+
+.file-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.limit-warning {
+  margin: 0;
+  padding: 0.8rem 0.95rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(172, 55, 36, 0.18);
+  background: rgba(255, 237, 234, 0.92);
+  color: #8c2f1f;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .file-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

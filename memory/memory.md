@@ -26,7 +26,7 @@
   - `lessons/lesson5/{index.html, lesson5.css, lesson5.js}`
   - `lessons/lesson-6/{index.html, lesson-6.css, lesson-6.js, llm-caller.js}`
   - `lessons/lesson-7/{index.html, lesson-7.css, lesson-7.js}`
-  - `lessons/lesson-8/{index.html}`
+  - `lessons/lesson-8/{index.html, lesson-8.css, lesson-8.js}`
   - `lessons/lesson-9/{index.html}`
   - `lessons/lesson-10/{index.html, week-placeholder.css}`
 - Shared frontend files:
@@ -76,6 +76,12 @@
   - `messages`
 - Lesson 7 reuses `LLMCaller` and stores the conversation history in browser `localStorage`
 - Lesson 7 restores saved history on page load and keeps the same context for the next request
+- Lesson 8 request body is JSON with:
+  - `model`
+  - `messages`
+- Lesson 8 reuses `LLMCaller`, estimates prompt tokens on the client, and uses API `usage` to show actual token counts
+- Lesson 8 reuses DeepSeek Flash pricing logic from lesson 5 to estimate input, output, and total cost
+- Lesson 8 can append a chosen `.txt` file into the prompt and blocks the request when the estimated context exceeds the lesson limit
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
@@ -127,6 +133,9 @@
 - Task 7 replaced the lesson 7 placeholder with a full page based on lesson 6
 - Task 7 stores lesson 7 history in `localStorage` under a JSON array of `{ role, content }`
 - Task 7 added a modal history viewer and supports clearing history from the main page and the modal
+- Task 8 replaced the lesson 8 placeholder with a token-and-cost demo page based on lessons 5-7
+- Task 8 reuses the lesson 5 price table for `deepseek-v4-flash` and shows estimated and actual token/cost data
+- Task 8 adds a text file picker that injects file content into the next prompt and warns when the estimated context exceeds the lesson limit
 
 ## Git State / Branching
 
@@ -138,6 +147,7 @@
 - `task-5` was created locally from `task-4`
 - `task-6` was created locally from `task-5`
 - `task-7` was created locally from `task-6`
+- `task-8` was created locally from `task-7`
 
 ## Local Run
 
@@ -161,3 +171,4 @@
 - If lesson 3 behavior is changed later, inspect `lessons/lesson3/lesson3.js` first: prompt transformation happens in `buildPrompt()`
 - For lesson 6, inspect `lessons/lesson-6/llm-caller.js` first if the request format or error handling changes
 - For lesson 7, inspect `lessons/lesson-7/lesson-7.js` first if persistence, modal history view, or localStorage recovery changes
+- For lesson 8, inspect `lessons/lesson-8/lesson-8.js` first if token estimation, file injection, or the context-limit warning changes
