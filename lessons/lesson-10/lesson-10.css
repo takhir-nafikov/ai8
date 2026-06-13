@@ -1,0 +1,157 @@
+@import "../lesson-9/lesson-9.css";
+
+.strategy-radios {
+  margin: 0 0 1.1rem;
+  padding: 0;
+  border: 0;
+}
+
+.strategy-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0 0 0.7rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(33, 44, 56, 0.12);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-main);
+}
+
+.strategy-radio:last-child {
+  margin-bottom: 0;
+}
+
+.strategy-radio input {
+  flex: 0 0 auto;
+}
+
+.small-input {
+  max-width: 10rem;
+}
+
+.strategy-panel {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-sm);
+  background: rgba(253, 248, 240, 0.86);
+  border: 1px solid rgba(140, 109, 54, 0.12);
+}
+
+.branch-status {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.branch-pill,
+.branch-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: rgba(92, 110, 142, 0.13);
+  color: #30415a;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.branch-switcher {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+}
+
+.branch-button {
+  border: 1px solid rgba(33, 44, 56, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text-main);
+  padding: 0.6rem 0.95rem;
+  cursor: pointer;
+  transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+
+.branch-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(33, 44, 56, 0.22);
+}
+
+.branch-button-active {
+  background: rgba(221, 161, 94, 0.2);
+  border-color: rgba(181, 122, 54, 0.35);
+  color: #6e3d0c;
+  font-weight: 700;
+}
+
+.context-details {
+  margin-top: 1rem;
+}
+
+.api-error-output {
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(172, 55, 36, 0.18);
+  background: rgba(255, 237, 234, 0.96);
+  color: #8c2f1f;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.history-entry-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.facts-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.fact-card {
+  padding: 1rem;
+  border: 1px solid rgba(33, 44, 56, 0.1);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.fact-key {
+  margin: 0 0 0.45rem;
+  font-weight: 700;
+  color: #3a2f20;
+}
+
+.fact-value {
+  color: var(--text-main);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fact-value p {
+  margin: 0;
+}
+
+.fact-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.fact-definition-list {
+  margin: 0;
+}
+
+.fact-definition-item + .fact-definition-item {
+  margin-top: 0.55rem;
+}
+
+.fact-definition-item dt {
+  font-weight: 700;
+}
+
+.fact-definition-item dd {
+  margin: 0.15rem 0 0;
+}

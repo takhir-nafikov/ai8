@@ -28,7 +28,7 @@
   - `lessons/lesson-7/{index.html, lesson-7.css, lesson-7.js}`
   - `lessons/lesson-8/{index.html, lesson-8.css, lesson-8.js}`
   - `lessons/lesson-9/{index.html, lesson-9.css, lesson-9.js}`
-  - `lessons/lesson-10/{index.html, week-placeholder.css}`
+  - `lessons/lesson-10/{index.html, lesson-10.css, lesson-10.js, week-placeholder.css}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -89,6 +89,14 @@
 - Lesson 9 stores the current dialog state in `localStorage`, including history, summary-toggle state, and accumulated usage totals
 - Lesson 9 can trigger a separate summary request after 10 non-summary messages when the auto-summary checkbox is enabled
 - Lesson 9 rewrites the active history into one assistant summary message plus future messages, and counts token/cost usage for both normal and summary requests
+- Lesson 10 request body is JSON with:
+  - `model`
+  - `messages`
+- Lesson 10 demonstrates three context strategies:
+  - Sliding Window sends and shows only the latest N messages in the active context view
+  - Sticky Facts sends structured facts plus the dialog history and updates facts with a separate auxiliary model request
+  - Branching sends only the active branch history and supports checkpoints plus branches A/B
+- Lesson 10 keeps token and cost totals for both main requests and auxiliary requests such as facts updates
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
@@ -147,6 +155,11 @@
 - Task 9 replaces the lesson 9 placeholder with a dialog page based on lesson 7, but with token/cost totals from lesson 8
 - Task 9 stores lesson 9 history separately in `localStorage` and can show it in a modal without rendering request body by default
 - Task 9 adds optional auto-summary after 10 messages; summary uses a separate model request and rewrites active history into a compact assistant summary
+- Task 10 replaces the lesson 10 placeholder with a context-management demo page based on lesson 9
+- Task 10 adds strategy switching between Sliding Window, Sticky Facts, and Branching with separate UI blocks and active-context preview
+- Task 10 adds facts updates through a separate model request and separate branch histories with checkpoint-based branch creation
+- Task 10 was refined so strategies are mutually exclusive radio buttons, Sliding Window history popup shows only the active window, Sticky Facts uses a modal facts viewer plus a dynamic key-value facts object, and Branching uses explicit branch buttons with a clear active branch indicator
+- Lesson 10 radio buttons stay switchable after strategy changes, and Sticky Facts keeps facts as an additional layer over the dialog history instead of replacing conversation messages
 
 ## Git State / Branching
 
@@ -160,6 +173,7 @@
 - `task-7` was created locally from `task-6`
 - `task-8` was created locally from `task-7`
 - `task-9` was created locally from `task-8`
+- `task-10` was created locally from `task-9`
 
 ## Local Run
 
@@ -185,3 +199,4 @@
 - For lesson 7, inspect `lessons/lesson-7/lesson-7.js` first if persistence, modal history view, or localStorage recovery changes
 - For lesson 8, inspect `lessons/lesson-8/lesson-8.js` first if token estimation, file injection, accepted file types, or API-error handling changes
 - For lesson 9, inspect `lessons/lesson-9/lesson-9.js` first if summary thresholds, history rewriting, or accumulated token/cost totals change
+- For lesson 10, inspect `lessons/lesson-10/lesson-10.js` first if context strategy rules, facts updates, or branching behavior change
