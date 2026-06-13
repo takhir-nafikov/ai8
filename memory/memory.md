@@ -27,7 +27,7 @@
   - `lessons/lesson-6/{index.html, lesson-6.css, lesson-6.js, llm-caller.js}`
   - `lessons/lesson-7/{index.html, lesson-7.css, lesson-7.js}`
   - `lessons/lesson-8/{index.html, lesson-8.css, lesson-8.js}`
-  - `lessons/lesson-9/{index.html}`
+  - `lessons/lesson-9/{index.html, lesson-9.css, lesson-9.js}`
   - `lessons/lesson-10/{index.html, week-placeholder.css}`
 - Shared frontend files:
   - `src/main.js`
@@ -83,6 +83,12 @@
 - Lesson 8 reuses DeepSeek Flash pricing logic from lesson 5 to estimate input, output, and total cost
 - Lesson 8 can append a chosen text-based file into the prompt, including `.txt`, `.md`, `.markdown`, `.json`, `.csv`, `.log`, `.yaml`, and `.yml`
 - Lesson 8 no longer has a local context-limit gate in UI or request preview; large prompts are allowed and real API errors are shown separately
+- Lesson 9 request body is JSON with:
+  - `model`
+  - `messages`
+- Lesson 9 stores the current dialog state in `localStorage`, including history, summary-toggle state, and accumulated usage totals
+- Lesson 9 can trigger a separate summary request after 10 non-summary messages when the auto-summary checkbox is enabled
+- Lesson 9 rewrites the active history into one assistant summary message plus future messages, and counts token/cost usage for both normal and summary requests
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
@@ -138,6 +144,9 @@
 - Task 8 reuses the lesson 5 price table for `deepseek-v4-flash` and shows estimated and actual token/cost data
 - Task 8 adds a text file picker that injects file content into the next prompt and supports Markdown plus other plain-text formats
 - Task 8 relies on real API errors for oversized prompts instead of a fake local context limit
+- Task 9 replaces the lesson 9 placeholder with a dialog page based on lesson 7, but with token/cost totals from lesson 8
+- Task 9 stores lesson 9 history separately in `localStorage` and can show it in a modal without rendering request body by default
+- Task 9 adds optional auto-summary after 10 messages; summary uses a separate model request and rewrites active history into a compact assistant summary
 
 ## Git State / Branching
 
@@ -150,6 +159,7 @@
 - `task-6` was created locally from `task-5`
 - `task-7` was created locally from `task-6`
 - `task-8` was created locally from `task-7`
+- `task-9` was created locally from `task-8`
 
 ## Local Run
 
@@ -174,3 +184,4 @@
 - For lesson 6, inspect `lessons/lesson-6/llm-caller.js` first if the request format or error handling changes
 - For lesson 7, inspect `lessons/lesson-7/lesson-7.js` first if persistence, modal history view, or localStorage recovery changes
 - For lesson 8, inspect `lessons/lesson-8/lesson-8.js` first if token estimation, file injection, accepted file types, or API-error handling changes
+- For lesson 9, inspect `lessons/lesson-9/lesson-9.js` first if summary thresholds, history rewriting, or accumulated token/cost totals change
