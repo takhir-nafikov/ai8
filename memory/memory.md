@@ -81,7 +81,8 @@
   - `messages`
 - Lesson 8 reuses `LLMCaller`, estimates prompt tokens on the client, and uses API `usage` to show actual token counts
 - Lesson 8 reuses DeepSeek Flash pricing logic from lesson 5 to estimate input, output, and total cost
-- Lesson 8 can append a chosen `.txt` file into the prompt and blocks the request when the estimated context exceeds the lesson limit
+- Lesson 8 can append a chosen text-based file into the prompt, including `.txt`, `.md`, `.markdown`, `.json`, `.csv`, `.log`, `.yaml`, and `.yml`
+- Lesson 8 no longer has a local context-limit gate in UI or request preview; large prompts are allowed and real API errors are shown separately
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
@@ -135,7 +136,8 @@
 - Task 7 added a modal history viewer and supports clearing history from the main page and the modal
 - Task 8 replaced the lesson 8 placeholder with a token-and-cost demo page based on lessons 5-7
 - Task 8 reuses the lesson 5 price table for `deepseek-v4-flash` and shows estimated and actual token/cost data
-- Task 8 adds a text file picker that injects file content into the next prompt and warns when the estimated context exceeds the lesson limit
+- Task 8 adds a text file picker that injects file content into the next prompt and supports Markdown plus other plain-text formats
+- Task 8 relies on real API errors for oversized prompts instead of a fake local context limit
 
 ## Git State / Branching
 
@@ -171,4 +173,4 @@
 - If lesson 3 behavior is changed later, inspect `lessons/lesson3/lesson3.js` first: prompt transformation happens in `buildPrompt()`
 - For lesson 6, inspect `lessons/lesson-6/llm-caller.js` first if the request format or error handling changes
 - For lesson 7, inspect `lessons/lesson-7/lesson-7.js` first if persistence, modal history view, or localStorage recovery changes
-- For lesson 8, inspect `lessons/lesson-8/lesson-8.js` first if token estimation, file injection, or the context-limit warning changes
+- For lesson 8, inspect `lessons/lesson-8/lesson-8.js` first if token estimation, file injection, accepted file types, or API-error handling changes

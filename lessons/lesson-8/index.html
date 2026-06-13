@@ -20,8 +20,8 @@
           <h1>Подсчёт токенов и стоимости диалога</h1>
           <p>
             Страница продолжает структуру уроков 6 и 7, но фокусируется на токенах и стоимости запроса.
-            Можно подгрузить текстовый файл, увеличить размер диалога и увидеть, когда оценка выходит за
-            лимит контекста.
+            Можно подгрузить большой текстовый или Markdown-файл, увеличить размер диалога и отправить
+            запрос в модель с реальным ответом или реальной ошибкой API.
           </p>
         </div>
 
@@ -41,9 +41,14 @@
               <h2 id="file-panel-title" class="setting-title">Текстовый файл для увеличения контекста</h2>
               <button id="select-file-button" class="secondary-button" type="button">Выбрать файл</button>
             </div>
-            <input id="file-input" type="file" accept=".txt,text/plain" hidden />
+            <input
+              id="file-input"
+              type="file"
+              accept=".txt,.md,.markdown,.json,.csv,.log,.yaml,.yml,text/plain,text/markdown,application/json,text/csv,text/x-log,text/yaml,application/x-yaml"
+              hidden
+            />
             <p id="file-meta" class="response-meta">Файл не выбран.</p>
-            <p id="limit-warning" class="limit-warning" hidden></p>
+            <pre id="api-error-output" class="api-error-output" hidden></pre>
           </section>
 
           <div class="button-row">
@@ -92,10 +97,6 @@
             <article class="metric-card">
               <span class="metric-label">Итоговая сумма</span>
               <strong id="total-cost-label" class="metric-value">пока не рассчитана</strong>
-            </article>
-            <article class="metric-card">
-              <span class="metric-label">Лимит контекста</span>
-              <strong id="context-limit-label" class="metric-value">64 000 токенов</strong>
             </article>
           </div>
 

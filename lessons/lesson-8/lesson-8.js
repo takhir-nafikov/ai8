@@ -1,7 +1,6 @@
 import { loadAppConfig, validateConfig } from "../../src/config.js";
 import { LLMCaller } from "../lesson-6/llm-caller.js";
 
-const CONTEXT_LIMIT_TOKENS = 64000;
 const TOKEN_PRICING = {
   "deepseek-v4-flash": {
     inputCacheHitPerMillion: 0.0028,
@@ -18,7 +17,7 @@ const removeFileButton = document.querySelector("#remove-file-button");
 const selectFileButton = document.querySelector("#select-file-button");
 const fileInput = document.querySelector("#file-input");
 const fileMeta = document.querySelector("#file-meta");
-const limitWarning = document.querySelector("#limit-warning");
+const apiErrorOutput = document.querySelector("#api-error-output");
 const statusBadge = document.querySelector("#status-badge");
 const output = document.querySelector("#response-output");
 const endpointLabel = document.querySelector("#api-endpoint-label");
@@ -33,7 +32,6 @@ const totalTokensLabel = document.querySelector("#total-tokens-label");
 const inputCostLabel = document.querySelector("#input-cost-label");
 const outputCostLabel = document.querySelector("#output-cost-label");
 const totalCostLabel = document.querySelector("#total-cost-label");
-const contextLimitLabel = document.querySelector("#context-limit-label");
 
 const requiredElements = [
   form,
@@ -44,7 +42,7 @@ const requiredElements = [
   selectFileButton,
   fileInput,
   fileMeta,
-  limitWarning,
+  apiErrorOutput,
   statusBadge,
   output,
   endpointLabel,
@@ -58,8 +56,7 @@ const requiredElements = [
   totalTokensLabel,
   inputCostLabel,
   outputCostLabel,
-  totalCostLabel,
-  contextLimitLabel
+  totalCostLabel
 ];
 
 if (requiredElements.some((element) => !element)) {
@@ -86,6 +83,16 @@ function setState(state, message) {
   clearHistoryButton.disabled = state === "loading";
   selectFileButton.disabled = state === "loading";
   removeFileButton.disabled = state === "loading";
+}
+
+function showApiError(message) {
+  apiErrorOutput.hidden = false;
+  apiErrorOutput.textContent = message;
+}
+
+function clearApiError() {
+  apiErrorOutput.hidden = true;
+  apiErrorOutput.textContent = "";
 }
 
 function showConfig(config) {
@@ -231,7 +238,6 @@ function resetUsageMetrics() {
   inputCostLabel.textContent = "пока не рассчитана";
   outputCostLabel.textContent = "пока не рассчитана";
   totalCostLabel.textContent = "пока не рассчитана";
-  contextLimitLabel.textContent = `${CONTEXT_LIMIT_TOKENS.toLocaleString("ru-RU")} токенов`;
 }
 
 function getFilePromptBlock() {
@@ -331,32 +337,19 @@ function renderFileMeta() {
     `${attachedFile.estimatedTokens.toLocaleString("ru-RU")} токенов (оценка)`;
 }
 
-function renderLimitState(prompt = "") {
+function renderEstimatedPromptTokens(prompt = "") {
   const requestBody = buildLessonRequest(prompt);
   const requestJson = JSON.stringify(requestBody);
   const estimatedPromptTokens = estimateTokens(requestJson);
 
   estimatedPromptTokensLabel.textContent = estimatedPromptTokens.toLocaleString("ru-RU");
-
-  if (estimatedPromptTokens > CONTEXT_LIMIT_TOKENS) {
-    limitWarning.hidden = false;
-    limitWarning.textContent =
-      `Запрос стал слишком большим: оценка ${estimatedPromptTokens.toLocaleString("ru-RU")} токенов ` +
-      `при лимите ${CONTEXT_LIMIT_TOKENS.toLocaleString("ru-RU")}.\n` +
-      "Уменьшите текст вопроса, очистите историю или уберите файл.";
-    return false;
-  }
-
-  limitWarning.hidden = true;
-  limitWarning.textContent = "";
-  return true;
+  return estimatedPromptTokens;
 }
 
 function renderCurrentRequestPreview(prompt = "") {
   const requestBody = buildLessonRequest(prompt);
   renderRequestBody({
     callerClass: "LLMCaller",
-    modelLimitTokens: CONTEXT_LIMIT_TOKENS,
     attachedFile: attachedFile
       ? {
           name: attachedFile.name,
@@ -366,7 +359,7 @@ function renderCurrentRequestPreview(prompt = "") {
       : null,
     requestBody
   });
-  renderLimitState(prompt);
+  renderEstimatedPromptTokens(prompt);
 }
 
 function clearConversationHistory() {
@@ -404,16 +397,11 @@ async function submitPrompt(prompt) {
     throw new Error("Config is not loaded.");
   }
 
-  const canSubmit = renderLimitState(prompt);
-  if (!canSubmit) {
-    throw new Error("Запрос превышает лимит контекста. Уменьшите диалог или уберите часть текста файла.");
-  }
-
+  const estimatedPromptTokens = renderEstimatedPromptTokens(prompt);
   const promptWithFile = buildPromptWithFile(prompt);
   const requestBody = llmCaller.buildRequest(promptWithFile, conversationHistory);
   renderRequestBody({
     callerClass: "LLMCaller",
-    modelLimitTokens: CONTEXT_LIMIT_TOKENS,
     attachedFile: attachedFile
       ? {
           name: attachedFile.name,
@@ -424,7 +412,6 @@ async function submitPrompt(prompt) {
     requestBody
   });
 
-  const estimatedPromptTokens = estimateTokens(JSON.stringify(requestBody));
   const result = await llmCaller.call(promptWithFile, conversationHistory);
 
   return {
@@ -436,6 +423,7 @@ async function submitPrompt(prompt) {
 async function initLessonPage() {
   setState("loading", "Загружаем конфигурацию...");
   button.disabled = true;
+  clearApiError();
 
   activeConfig = await loadAppConfig();
   showConfig(activeConfig);
@@ -465,6 +453,7 @@ async function initLessonPage() {
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
+  clearApiError();
 
   const prompt = input.value.trim();
   if (!prompt) {
@@ -497,7 +486,6 @@ form.addEventListener("submit", async (event) => {
     if (result.requestBody) {
       renderRequestBody({
         callerClass: "LLMCaller",
-        modelLimitTokens: CONTEXT_LIMIT_TOKENS,
         attachedFile: attachedFile
           ? {
               name: attachedFile.name,
@@ -510,16 +498,19 @@ form.addEventListener("submit", async (event) => {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось получить ответ.";
+    showApiError(message);
     setState("error", message);
   }
 });
 
 clearHistoryButton.addEventListener("click", () => {
+  clearApiError();
   clearConversationHistory();
   setState("idle", "История очищена. Ответ появится здесь после нового запроса.");
 });
 
 removeFileButton.addEventListener("click", () => {
+  clearApiError();
   removeAttachedFile();
   setState("idle", "Файл удалён из контекста.");
 });
@@ -536,9 +527,11 @@ fileInput.addEventListener("change", async () => {
 
   try {
     await readSelectedFile(file);
+    clearApiError();
     setState("idle", "Файл загружен и добавлен в контекст следующего запроса.");
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось прочитать выбранный файл.";
+    showApiError(message);
     setState("error", message);
   }
 });
@@ -550,5 +543,6 @@ input.addEventListener("input", () => {
 initLessonPage().catch((error) => {
   const message = error instanceof Error ? error.message : "Не удалось инициализировать страницу.";
   showConfigError(message);
+  showApiError(message);
   setState("error", message);
 });
