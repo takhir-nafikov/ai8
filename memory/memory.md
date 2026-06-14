@@ -94,8 +94,8 @@
   - `messages`
 - Lesson 10 demonstrates three context strategies:
   - Sliding Window sends and shows only the latest N messages in the active context view
-  - Sticky Facts sends structured facts plus the dialog history and updates facts with a separate auxiliary model request
-  - Branching sends only the active branch history and supports checkpoints plus branches A/B
+  - Sticky Facts sends structured facts plus the dialog history and updates facts with a separate auxiliary model request; it does not expose context/history popup UI or message-limit UI
+  - Branching behaves like a checkpoint-based branching system: before checkpoint it is a normal single chat, and after checkpoint it sends checkpoint history plus only the active branch tail
 - Lesson 10 keeps token and cost totals for both main requests and auxiliary requests such as facts updates
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
@@ -156,10 +156,13 @@
 - Task 9 stores lesson 9 history separately in `localStorage` and can show it in a modal without rendering request body by default
 - Task 9 adds optional auto-summary after 10 messages; summary uses a separate model request and rewrites active history into a compact assistant summary
 - Task 10 replaces the lesson 10 placeholder with a context-management demo page based on lesson 9
-- Task 10 adds strategy switching between Sliding Window, Sticky Facts, and Branching with separate UI blocks and active-context preview
+- Task 10 adds strategy switching between Sliding Window, Sticky Facts, and Branching with separate UI blocks
 - Task 10 adds facts updates through a separate model request and separate branch histories with checkpoint-based branch creation
-- Task 10 was refined so strategies are mutually exclusive radio buttons, Sliding Window history popup shows only the active window, Sticky Facts uses a modal facts viewer plus a dynamic key-value facts object, and Branching uses explicit branch buttons with a clear active branch indicator
+- Task 10 was refined so strategies are mutually exclusive radio buttons, Sliding Window history popup shows only the active window, Sticky Facts uses a modal facts viewer plus a dynamic key-value facts object, and Branching now creates branches A/B directly from a checkpoint while keeping branch-specific post-checkpoint messages isolated
 - Lesson 10 radio buttons stay switchable after strategy changes, and Sticky Facts keeps facts as an additional layer over the dialog history instead of replacing conversation messages
+- Lesson 10 does not expose an active-context payload preview; Sticky Facts has no message-count limit and sends its full dialog history together with durable facts
+- Lesson 10 Sticky Facts hides the generic history/context button, keeps the facts modal close button enabled, and does not show prompt-estimate or active-context message-count UI
+- Lesson 10 Branching keeps checkpoint creation and branch switching controls enabled for manual checkpoint-based branching
 
 ## Git State / Branching
 

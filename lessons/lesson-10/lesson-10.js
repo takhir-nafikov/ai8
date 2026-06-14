@@ -19,7 +19,6 @@ const form = document.querySelector("#lesson-form");
 const input = document.querySelector("#prompt-input");
 const strategyInputs = Array.from(document.querySelectorAll('input[name="strategy"]'));
 const slidingWindowSizeInput = document.querySelector("#sliding-window-size");
-const factsWindowSizeInput = document.querySelector("#facts-window-size");
 const button = document.querySelector("#submit-button");
 const viewHistoryButton = document.querySelector("#view-history-button");
 const clearHistoryButton = document.querySelector("#clear-history-button");
@@ -28,7 +27,7 @@ const closeHistoryButton = document.querySelector("#close-history-button");
 const viewFactsButton = document.querySelector("#view-facts-button");
 const closeFactsButton = document.querySelector("#close-facts-button");
 const createCheckpointButton = document.querySelector("#create-checkpoint-button");
-const createBranchesButton = document.querySelector("#create-branches-button");
+const branchStatusRow = document.querySelector("#branch-status-row");
 const activeBranchLabel = document.querySelector("#active-branch-label");
 const checkpointStatus = document.querySelector("#checkpoint-status");
 const branchSwitcher = document.querySelector("#branch-switcher");
@@ -46,6 +45,8 @@ const endpointLabel = document.querySelector("#api-endpoint-label");
 const modelLabel = document.querySelector("#model-label");
 const configError = document.querySelector("#config-error");
 const apiErrorOutput = document.querySelector("#api-error-output");
+const historyCountMeta = document.querySelector("#history-count-meta");
+const promptEstimateCard = document.querySelector("#prompt-estimate-card");
 const historyCount = document.querySelector("#history-count");
 const estimatedPromptTokensLabel = document.querySelector("#estimated-prompt-tokens-label");
 const requestCountLabel = document.querySelector("#request-count-label");
@@ -56,13 +57,11 @@ const totalTokensLabel = document.querySelector("#total-tokens-label");
 const inputCostLabel = document.querySelector("#input-cost-label");
 const outputCostLabel = document.querySelector("#output-cost-label");
 const totalCostLabel = document.querySelector("#total-cost-label");
-const contextPreviewOutput = document.querySelector("#context-preview-output");
 
 const requiredElements = [
   form,
   input,
   slidingWindowSizeInput,
-  factsWindowSizeInput,
   button,
   viewHistoryButton,
   clearHistoryButton,
@@ -71,7 +70,7 @@ const requiredElements = [
   viewFactsButton,
   closeFactsButton,
   createCheckpointButton,
-  createBranchesButton,
+  branchStatusRow,
   activeBranchLabel,
   checkpointStatus,
   branchSwitcher,
@@ -89,6 +88,8 @@ const requiredElements = [
   modelLabel,
   configError,
   apiErrorOutput,
+  historyCountMeta,
+  promptEstimateCard,
   historyCount,
   estimatedPromptTokensLabel,
   requestCountLabel,
@@ -98,8 +99,7 @@ const requiredElements = [
   totalTokensLabel,
   inputCostLabel,
   outputCostLabel,
-  totalCostLabel,
-  contextPreviewOutput
+  totalCostLabel
 ];
 
 if (requiredElements.some((element) => !element) || strategyInputs.length === 0) {
@@ -137,15 +137,14 @@ let factsState = {
 };
 let stickyFacts = {};
 let branchState = {
-  branches: {
-    main: {
-      id: "main",
-      label: "Основная",
-      history: []
-    }
-  },
-  activeBranchId: "main",
-  checkpointHistory: null
+  commonHistory: [],
+  checkpointHistory: null,
+  branches: null,
+  activeBranchId: null,
+  branchLabels: {
+    branchA: "Ветка A",
+    branchB: "Ветка B"
+  }
 };
 let usageTotals = emptyUsageTotals();
 let isAuxRunning = false;
@@ -161,14 +160,13 @@ function setState(state, message) {
   clearHistoryButton.disabled = shouldDisableControls;
   dialogClearHistoryButton.disabled = shouldDisableControls;
   viewFactsButton.disabled = shouldDisableControls || getCurrentStrategy() !== "facts";
-  closeFactsButton.disabled = shouldDisableControls;
+  closeFactsButton.disabled = false;
+  closeHistoryButton.disabled = false;
   slidingWindowSizeInput.disabled = shouldDisableControls;
-  factsWindowSizeInput.disabled = shouldDisableControls;
-  createCheckpointButton.disabled = shouldDisableControls;
-  createBranchesButton.disabled = shouldDisableControls;
+  createCheckpointButton.disabled = false;
 
   branchSwitcher.querySelectorAll("button").forEach((buttonElement) => {
-    buttonElement.disabled = shouldDisableControls;
+    buttonElement.disabled = false;
   });
 }
 
@@ -388,7 +386,11 @@ function getCurrentStrategy() {
 }
 
 function getActiveBranch() {
-  return branchState.branches[branchState.activeBranchId];
+  if (!branchState.branches || !branchState.activeBranchId) {
+    return null;
+  }
+
+  return branchState.branches[branchState.activeBranchId] ?? null;
 }
 
 function getWindowSize(inputElement, fallback) {
@@ -511,7 +513,7 @@ function getVisibleHistory(strategy = getCurrentStrategy()) {
     return factsState.fullHistory;
   }
 
-  return getActiveBranch().history;
+  return getBranchConversationHistory();
 }
 
 function getFactsConversationHistory() {
@@ -527,7 +529,20 @@ function getContextHistory(strategy = getCurrentStrategy()) {
     return getFactsConversationHistory();
   }
 
-  return getActiveBranch().history;
+  return getBranchConversationHistory();
+}
+
+function hasBranchCheckpoint() {
+  return Array.isArray(branchState.checkpointHistory);
+}
+
+function getBranchConversationHistory(branchId = branchState.activeBranchId) {
+  if (!hasBranchCheckpoint()) {
+    return branchState.commonHistory;
+  }
+
+  const branchMessages = branchState.branches?.[branchId]?.messages ?? [];
+  return [...branchState.checkpointHistory, ...branchMessages];
 }
 
 function buildContextForStrategy(strategy, prompt = "") {
@@ -536,15 +551,7 @@ function buildContextForStrategy(strategy, prompt = "") {
     const contextHistory = sliceLastMessages(slidingState.contextHistory, windowSize);
     const requestMessages = prompt ? [...contextHistory, { role: "user", content: prompt }] : [...contextHistory];
 
-    return {
-      requestMessages,
-      preview: {
-        strategy: STRATEGY_LABELS.sliding,
-        windowSize,
-        visibleContextMessages: contextHistory.length,
-        requestMessagesCount: requestMessages.length
-      }
-    };
+    return { requestMessages };
   }
 
   if (strategy === "facts") {
@@ -556,29 +563,13 @@ function buildContextForStrategy(strategy, prompt = "") {
       ...(prompt ? [{ role: "user", content: prompt }] : [])
     ];
 
-    return {
-      requestMessages,
-      preview: {
-        strategy: STRATEGY_LABELS.facts,
-        factsKeys: Object.keys(stickyFacts),
-        visibleHistoryMessages: conversationHistory.length,
-        requestMessagesCount: requestMessages.length
-      }
-    };
+    return { requestMessages };
   }
 
-  const branchHistory = getActiveBranch().history;
+  const branchHistory = getBranchConversationHistory();
   const requestMessages = prompt ? [...branchHistory, { role: "user", content: prompt }] : [...branchHistory];
 
-  return {
-    requestMessages,
-    preview: {
-      strategy: STRATEGY_LABELS.branching,
-      activeBranch: getActiveBranch().label,
-      branchSize: branchHistory.length,
-      availableBranches: Object.values(branchState.branches).map((branch) => branch.label)
-    }
-  };
+  return { requestMessages };
 }
 
 function renderFactsModal() {
@@ -641,9 +632,20 @@ function renderFactValueHtml(value) {
 }
 
 function renderBranchControls() {
+  const checkpointExists = hasBranchCheckpoint();
+  branchStatusRow.hidden = !checkpointExists;
+  branchSwitcher.hidden = !checkpointExists;
+
+  if (!checkpointExists) {
+    activeBranchLabel.textContent = "";
+    checkpointStatus.textContent = "";
+    branchSwitcher.innerHTML = "";
+    return;
+  }
+
   const activeBranch = getActiveBranch();
-  activeBranchLabel.textContent = activeBranch.label;
-  checkpointStatus.textContent = branchState.checkpointHistory ? "checkpoint сохранён" : "checkpoint не создан";
+  activeBranchLabel.textContent = activeBranch?.label ?? "";
+  checkpointStatus.textContent = "checkpoint сохранён";
 
   branchSwitcher.innerHTML = Object.values(branchState.branches)
     .map(
@@ -663,29 +665,31 @@ function renderBranchControls() {
 
 function renderStrategyPanels() {
   const strategy = getCurrentStrategy();
+  const isFactsStrategy = strategy === "facts";
   slidingControls.hidden = strategy !== "sliding";
-  factsControls.hidden = strategy !== "facts";
+  factsControls.hidden = !isFactsStrategy;
   branchingControls.hidden = strategy !== "branching";
-  viewFactsButton.disabled = strategy !== "facts";
+  viewHistoryButton.hidden = isFactsStrategy;
+  viewFactsButton.disabled = !isFactsStrategy;
+  historyCountMeta.hidden = isFactsStrategy;
+  promptEstimateCard.hidden = isFactsStrategy;
+
+  if (isFactsStrategy && historyDialog.open) {
+    closeHistoryDialog();
+  }
 }
 
 function renderHistoryState() {
   historyCount.textContent = String(getVisibleHistory().length);
 }
 
-function renderContextPreview(prompt = input.value.trim()) {
-  const strategy = getCurrentStrategy();
-  const context = buildContextForStrategy(strategy, prompt);
-  contextPreviewOutput.textContent = JSON.stringify(
-    {
-      strategy,
-      ...context.preview,
-      requestMessages: context.requestMessages
-    },
-    null,
-    2
-  );
+function renderPromptEstimate(prompt = input.value.trim()) {
+  if (getCurrentStrategy() === "facts") {
+    estimatedPromptTokensLabel.textContent = "не показывается";
+    return;
+  }
 
+  const context = buildContextForStrategy(getCurrentStrategy(), prompt);
   const estimatedPromptTokens = prompt ? estimateTokens(JSON.stringify(context.requestMessages)) : 0;
   estimatedPromptTokensLabel.textContent = estimatedPromptTokens.toLocaleString("ru-RU");
 }
@@ -698,8 +702,10 @@ function renderHistoryDialog() {
     historyDialogTitle.textContent = "Активный контекст Sliding Window";
   } else if (strategy === "facts") {
     historyDialogTitle.textContent = "История диалога Sticky Facts";
+  } else if (!hasBranchCheckpoint()) {
+    historyDialogTitle.textContent = "История диалога";
   } else {
-    historyDialogTitle.textContent = `История активной ветки: ${getActiveBranch().label}`;
+    historyDialogTitle.textContent = `История активной ветки: ${getActiveBranch()?.label ?? ""}`;
   }
 
   if (history.length === 0) {
@@ -707,12 +713,23 @@ function renderHistoryDialog() {
     return;
   }
 
-  historyList.innerHTML = history
+  const branchingEntries =
+    strategy === "branching" && hasBranchCheckpoint()
+      ? [
+          ...branchState.checkpointHistory.map((message) => ({ ...message, branchId: null })),
+          ...(getActiveBranch()?.messages ?? []).map((message) => ({
+            ...message,
+            branchId: branchState.activeBranchId
+          }))
+        ]
+      : history.map((message) => ({ ...message, branchId: null }));
+
+  historyList.innerHTML = branchingEntries
     .map((message) => {
       const roleLabel = message.role === "user" ? "Пользователь" : "AI";
       const metaBadge =
-        strategy === "branching"
-          ? `<span class="branch-tag">${escapeHtml(getActiveBranch().label)}</span>`
+        strategy === "branching" && message.branchId
+          ? `<span class="branch-tag">${escapeHtml(branchState.branchLabels[message.branchId] ?? message.branchId)}</span>`
           : strategy === "sliding"
             ? '<span class="branch-tag">Активное окно</span>'
             : "";
@@ -753,7 +770,7 @@ function syncUi() {
   renderFactsModal();
   renderBranchControls();
   renderHistoryState();
-  renderContextPreview();
+  renderPromptEstimate();
 }
 
 function addHistoryMessage(role, content) {
@@ -768,7 +785,11 @@ function addHistoryMessage(role, content) {
   } else if (strategy === "facts") {
     factsState.fullHistory.push(message);
   } else {
-    getActiveBranch().history.push(message);
+    if (hasBranchCheckpoint()) {
+      getActiveBranch()?.messages.push(message);
+    } else {
+      branchState.commonHistory.push(message);
+    }
   }
 
   syncUi();
@@ -779,15 +800,14 @@ function clearCurrentStrategyHistory() {
 
   if (strategy === "branching") {
     branchState = {
-      branches: {
-        main: {
-          id: "main",
-          label: "Основная",
-          history: []
-        }
-      },
-      activeBranchId: "main",
-      checkpointHistory: null
+      commonHistory: [],
+      checkpointHistory: null,
+      branches: null,
+      activeBranchId: null,
+      branchLabels: {
+        branchA: "Ветка A",
+        branchB: "Ветка B"
+      }
     };
   } else if (strategy === "facts") {
     factsState = {
@@ -859,27 +879,24 @@ async function updateFactsWithModel(userPrompt) {
 }
 
 function createCheckpoint() {
-  branchState.checkpointHistory = structuredClone(getActiveBranch().history);
-  syncUi();
-  setState("idle", "Checkpoint сохранён. Теперь можно создать ветки A и B.");
-}
-
-function createBranchesFromCheckpoint() {
-  const baseHistory = branchState.checkpointHistory ?? structuredClone(getActiveBranch().history);
-
-  branchState.branches.branchA = {
-    id: "branchA",
-    label: "Ветка A",
-    history: structuredClone(baseHistory)
-  };
-  branchState.branches.branchB = {
-    id: "branchB",
-    label: "Ветка B",
-    history: structuredClone(baseHistory)
+  const checkpointHistory = structuredClone(getBranchConversationHistory());
+  branchState.checkpointHistory = checkpointHistory;
+  branchState.commonHistory = structuredClone(checkpointHistory);
+  branchState.branches = {
+    branchA: {
+      id: "branchA",
+      label: branchState.branchLabels.branchA,
+      messages: []
+    },
+    branchB: {
+      id: "branchB",
+      label: branchState.branchLabels.branchB,
+      messages: []
+    }
   };
   branchState.activeBranchId = "branchA";
   syncUi();
-  setState("idle", "Ветки A и B созданы от последнего checkpoint.");
+  setState("idle", "Checkpoint сохранён. Созданы ветки A и B. Активна ветка A.");
 }
 
 async function initLessonPage() {
@@ -946,7 +963,7 @@ form.addEventListener("submit", async (event) => {
     renderMarkdownOutput(`${result.answer}${suffix}`);
     output.scrollTop = 0;
     input.value = "";
-    renderContextPreview();
+    renderPromptEstimate();
     button.disabled = false;
     viewHistoryButton.disabled = false;
     clearHistoryButton.disabled = false;
@@ -975,10 +992,6 @@ slidingWindowSizeInput.addEventListener("input", () => {
   syncUi();
 });
 
-factsWindowSizeInput.addEventListener("input", () => {
-  renderContextPreview();
-});
-
 branchSwitcher.addEventListener("click", (event) => {
   const buttonElement = event.target.closest("[data-branch-id]");
   if (!buttonElement) {
@@ -994,11 +1007,11 @@ createCheckpointButton.addEventListener("click", () => {
   createCheckpoint();
 });
 
-createBranchesButton.addEventListener("click", () => {
-  createBranchesFromCheckpoint();
-});
-
 viewHistoryButton.addEventListener("click", () => {
+  if (getCurrentStrategy() === "facts") {
+    return;
+  }
+
   openHistoryDialog();
 });
 
@@ -1038,7 +1051,7 @@ factsDialog.addEventListener("cancel", (event) => {
 });
 
 input.addEventListener("input", () => {
-  renderContextPreview(input.value.trim());
+  renderPromptEstimate(input.value.trim());
 });
 
 initLessonPage().catch((error) => {

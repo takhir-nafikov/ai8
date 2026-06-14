@@ -47,24 +47,21 @@
           </div>
 
           <div id="facts-controls" class="strategy-panel" hidden>
-            <label class="field-label" for="facts-window-size">Сколько последних сообщений отправлять вместе с facts</label>
-            <input id="facts-window-size" class="text-input small-input" type="number" min="2" max="30" value="6" />
             <div class="button-row">
               <button id="view-facts-button" class="secondary-button" type="button">Показать facts</button>
             </div>
           </div>
 
           <div id="branching-controls" class="strategy-panel" hidden>
-            <p class="response-meta branch-status">
+            <p id="branch-status-row" class="response-meta branch-status" hidden>
               Активная ветка:
               <strong id="active-branch-label">Основная</strong>
               <span id="checkpoint-status" class="branch-pill">checkpoint не создан</span>
             </p>
             <div class="button-row">
               <button id="create-checkpoint-button" class="secondary-button" type="button">Создать checkpoint</button>
-              <button id="create-branches-button" class="secondary-button" type="button">Создать ветки A и B</button>
             </div>
-            <div id="branch-switcher" class="branch-switcher" aria-label="Переключение веток"></div>
+            <div id="branch-switcher" class="branch-switcher" aria-label="Переключение веток" hidden></div>
           </div>
 
           <label class="field-label" for="prompt-input">Введите сообщение</label>
@@ -94,10 +91,12 @@
           <p class="response-meta">
             Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
           </p>
-          <p class="response-meta">Сообщений в активном контексте: <strong id="history-count">0</strong></p>
+          <p id="history-count-meta" class="response-meta">
+            Сообщений в активном контексте: <strong id="history-count">0</strong>
+          </p>
 
           <div class="metrics-grid">
-            <article class="metric-card">
+            <article id="prompt-estimate-card" class="metric-card">
               <span class="metric-label">Оценка текущего prompt</span>
               <strong id="estimated-prompt-tokens-label" class="metric-value">0</strong>
             </article>
@@ -134,11 +133,6 @@
               <strong id="total-cost-label" class="metric-value">пока не рассчитана</strong>
             </article>
           </div>
-
-          <details class="context-details">
-            <summary>Показать активный контекст</summary>
-            <pre id="context-preview-output" class="payload-output">контекст ещё не сформирован</pre>
-          </details>
 
           <div id="response-output" class="response-output response-output-scrollable">Ответ появится здесь.</div>
         </section>
