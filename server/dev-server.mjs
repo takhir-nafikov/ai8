@@ -1,11 +1,34 @@
 import { createServer } from "node:http";
-import { readFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, "..");
+const workingMemoryCandidates = [path.join(rootDir, "memory.md"), path.join(rootDir, "memory", "memory.md")];
+const longTermMemoryFiles = {
+  solution: path.join(rootDir, "docs", "local_docs", "solution.md"),
+  knowledge: path.join(rootDir, "docs", "local_docs", "knowledge.md")
+};
+const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
+
+Определи, нужно ли сохранить информацию в долговременную память проекта.
+
+Верни строго JSON без markdown:
+
+{
+  "target": "solution" | "knowledge" | "none",
+  "text": "краткая запись для сохранения"
+}
+
+Правила:
+- target = "solution", если это принятое решение, конкретный шаг реализации, архитектурный выбор или договоренность по задаче.
+- target = "knowledge", если это полезное знание, объяснение, наблюдение или правило, которое может пригодиться позже.
+- target = "none", если сохранять ничего не нужно.
+- text должен быть коротким, понятным и пригодным для добавления в Markdown-файл.
+- Не дублируй уже сохраненную информацию.
+- Не сохраняй технический шум, временные сообщения и простые подтверждения.`;
 
 function parseEnv(content) {
   return content
@@ -73,6 +96,334 @@ function sendJson(response, statusCode, payload) {
     "Content-Type": "application/json; charset=utf-8"
   });
   response.end(JSON.stringify(payload));
+}
+
+async function readOptionalText(filePath) {
+  try {
+    return await readFile(filePath, "utf8");
+  } catch {
+    return "";
+  }
+}
+
+async function readWorkingMemory() {
+  for (const filePath of workingMemoryCandidates) {
+    const content = await readOptionalText(filePath);
+    if (content.trim()) {
+      return {
+        path: path.relative(rootDir, filePath).replaceAll("\\", "/"),
+        content
+      };
+    }
+  }
+
+  return {
+    path: "memory.md",
+    content: ""
+  };
+}
+
+async function readLongTermMemory() {
+  const solution = await readOptionalText(longTermMemoryFiles.solution);
+  const knowledge = await readOptionalText(longTermMemoryFiles.knowledge);
+
+  return {
+    solution: {
+      path: "docs/local_docs/solution.md",
+      content: solution
+    },
+    knowledge: {
+      path: "docs/local_docs/knowledge.md",
+      content: knowledge
+    }
+  };
+}
+
+function extractJsonObject(text) {
+  if (typeof text !== "string") {
+    return null;
+  }
+
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const match = trimmed.match(/\{[\s\S]*\}/u);
+    if (!match) {
+      return null;
+    }
+
+    try {
+      return JSON.parse(match[0]);
+    } catch {
+      return null;
+    }
+  }
+}
+
+function normalizeMemoryText(text) {
+  return typeof text === "string" ? text.trim().replace(/\s+/gu, " ").toLowerCase() : "";
+}
+
+function stripMemoryPrefix(line) {
+  return line.replace(/^\s*-\s*\d{4}-\d{2}-\d{2}:\s*/u, "").trim();
+}
+
+function hasMemoryDuplicate(fileContent, text) {
+  const normalizedTarget = normalizeMemoryText(text);
+  if (!normalizedTarget) {
+    return true;
+  }
+
+  return fileContent
+    .split(/\r?\n/u)
+    .map((line) => normalizeMemoryText(stripMemoryPrefix(line)))
+    .includes(normalizedTarget);
+}
+
+function normalizeClassifierResult(result, existingSolution, existingKnowledge) {
+  const target = result?.target;
+  const text = typeof result?.text === "string" ? result.text.trim() : "";
+
+  if (!["solution", "knowledge", "none"].includes(target)) {
+    return { target: "none", text: "" };
+  }
+
+  if (target === "none" || !text) {
+    return { target: "none", text: "" };
+  }
+
+  const targetFileContent = target === "solution" ? existingSolution : existingKnowledge;
+  if (hasMemoryDuplicate(targetFileContent, text)) {
+    return { target: "none", text: "" };
+  }
+
+  return { target, text };
+}
+
+function classifyMemoryHeuristically({ role, content, existingSolution, existingKnowledge }) {
+  const trimmed = typeof content === "string" ? content.trim() : "";
+  if (!trimmed || trimmed.length < 20) {
+    return { target: "none", text: "" };
+  }
+
+  const normalized = trimmed.toLowerCase();
+
+  const solutionMarkers = [
+    "используем",
+    "реализуем",
+    "добавим",
+    "нужно",
+    "итог",
+    "решение",
+    "архитектур",
+    "договор"
+  ];
+  const knowledgeMarkers = [
+    "важно",
+    "правило",
+    "наблюдение",
+    "потому",
+    "ограничение",
+    "можно",
+    "нельзя"
+  ];
+
+  if (solutionMarkers.some((marker) => normalized.includes(marker))) {
+    return normalizeClassifierResult(
+      {
+        target: "solution",
+        text: trimmed.slice(0, 220)
+      },
+      existingSolution,
+      existingKnowledge
+    );
+  }
+
+  if (knowledgeMarkers.some((marker) => normalized.includes(marker))) {
+    return normalizeClassifierResult(
+      {
+        target: "knowledge",
+        text: trimmed.slice(0, 220)
+      },
+      existingSolution,
+      existingKnowledge
+    );
+  }
+
+  if (role === "assistant" && trimmed.length > 80) {
+    return normalizeClassifierResult(
+      {
+        target: "knowledge",
+        text: trimmed.slice(0, 220)
+      },
+      existingSolution,
+      existingKnowledge
+    );
+  }
+
+  return { target: "none", text: "" };
+}
+
+function classifyForcedMemoryFallback({ content, existingSolution, existingKnowledge }) {
+  const trimmed = typeof content === "string" ? content.trim() : "";
+  if (!trimmed) {
+    return { target: "none", text: "" };
+  }
+
+  const normalized = trimmed.toLowerCase();
+  const solutionHints = [
+    "урок",
+    "страниц",
+    "проект",
+    "backend",
+    "endpoint",
+    "api",
+    "реализ",
+    "добав"
+  ];
+
+  return normalizeClassifierResult(
+    {
+      target: solutionHints.some((hint) => normalized.includes(hint)) ? "solution" : "knowledge",
+      text: trimmed.slice(0, 220)
+    },
+    existingSolution,
+    existingKnowledge
+  );
+}
+
+async function classifyMemoryWithModel({ role, content, history, existingSolution, existingKnowledge }) {
+  const classifierRequestBody = {
+    model: env.DEEPSEEK_MODEL,
+    messages: [
+      {
+        role: "system",
+        content: memoryClassifierPrompt
+      },
+      {
+        role: "user",
+        content: JSON.stringify({
+          currentTask: "Lesson 11 page with short, working and long-term memory.",
+          role,
+          message: content,
+          recentHistory: history.slice(-8),
+          savedSolution: existingSolution,
+          savedKnowledge: existingKnowledge
+        })
+      }
+    ],
+    stream: false
+  };
+
+  const upstreamResponse = await fetch(env.DEEPSEEK_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify(classifierRequestBody)
+  });
+
+  const upstreamPayload = await upstreamResponse.json().catch(() => null);
+  if (!upstreamResponse.ok) {
+    const message =
+      upstreamPayload?.error?.message ??
+      upstreamPayload?.message ??
+      `Classifier request failed with status ${upstreamResponse.status}.`;
+    throw new Error(message);
+  }
+
+  const answer = extractAnswer(upstreamPayload);
+  const parsed = extractJsonObject(answer);
+
+  return normalizeClassifierResult(parsed, existingSolution, existingKnowledge);
+}
+
+async function appendMemoryEntry(filePath, text) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  const currentContent = await readOptionalText(filePath);
+  const prefix = currentContent && !currentContent.endsWith("\n") ? "\n" : "";
+  const date = new Date().toISOString().slice(0, 10);
+  await appendFile(filePath, `${prefix}- ${date}: ${text}\n`, "utf8");
+}
+
+async function saveLongTermMemoryEntry(target, text) {
+  if (!["solution", "knowledge"].includes(target)) {
+    throw new Error("Field 'target' must be either 'solution' or 'knowledge'.");
+  }
+
+  const normalizedText = typeof text === "string" ? text.trim() : "";
+  if (!normalizedText) {
+    throw new Error("Field 'text' is required.");
+  }
+
+  const filePath = longTermMemoryFiles[target];
+  const existingContent = await readOptionalText(filePath);
+  if (hasMemoryDuplicate(existingContent, normalizedText)) {
+    return {
+      target,
+      text: normalizedText,
+      appended: false,
+      duplicate: true
+    };
+  }
+
+  await appendMemoryEntry(filePath, normalizedText);
+  return {
+    target,
+    text: normalizedText,
+    appended: true,
+    duplicate: false
+  };
+}
+
+async function classifyMemoryEntry({ role, content, history, forceSave = false }) {
+  const longTerm = await readLongTermMemory();
+  const existingSolution = longTerm.solution.content;
+  const existingKnowledge = longTerm.knowledge.content;
+
+  const classification =
+    env.MOCK_DEEPSEEK === "true" || !env.DEEPSEEK_API_KEY
+      ? classifyMemoryHeuristically({
+          role,
+          content,
+          history,
+          existingSolution,
+          existingKnowledge
+        })
+      : await classifyMemoryWithModel({
+          role,
+          content,
+          history,
+          existingSolution,
+          existingKnowledge
+        });
+
+  if (!forceSave || classification.target === "none") {
+    if (forceSave && classification.target === "none") {
+      const forcedFallback = classifyForcedMemoryFallback({
+        content,
+        existingSolution,
+        existingKnowledge
+      });
+
+      if (forcedFallback.target !== "none") {
+        return saveLongTermMemoryEntry(forcedFallback.target, forcedFallback.text);
+      }
+    }
+
+    return {
+      ...classification,
+      appended: false
+    };
+  }
+
+  return saveLongTermMemoryEntry(classification.target, classification.text);
 }
 
 function getClientConfig(env) {
@@ -229,6 +580,67 @@ const server = createServer(async (request, response) => {
     const clientConfig = getClientConfig(env);
     console.log("[config] endpoint:", clientConfig.apiEndpoint, "model:", clientConfig.model);
     sendJson(response, 200, clientConfig);
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/lesson11/memory") {
+    try {
+      const working = await readWorkingMemory();
+      const longTerm = await readLongTermMemory();
+      sendJson(response, 200, {
+        working,
+        solution: longTerm.solution,
+        knowledge: longTerm.knowledge
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to read lesson 11 memory.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson11/memory/remember") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const role = payload.role === "assistant" ? "assistant" : "user";
+      const content = typeof payload.content === "string" ? payload.content.trim() : "";
+      const history = parseMessages(payload.history) ?? [];
+      const forceSave = payload.forceSave === true;
+
+      if (!content) {
+        sendJson(response, 400, { error: "Field 'content' is required." });
+        return;
+      }
+
+      const result = await classifyMemoryEntry({
+        role,
+        content,
+        history,
+        forceSave
+      });
+
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to update lesson 11 memory.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson11/memory/save") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const target = typeof payload.target === "string" ? payload.target.trim() : "";
+      const text = typeof payload.text === "string" ? payload.text.trim() : "";
+
+      const result = await saveLongTermMemoryEntry(target, text);
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to save lesson 11 memory.";
+      sendJson(response, 500, { error: message });
+    }
     return;
   }
 

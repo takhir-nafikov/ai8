@@ -16,6 +16,11 @@
   - `lessons/lesson-8/index.html`
   - `lessons/lesson-9/index.html`
   - `lessons/lesson-10/index.html`
+  - `lessons/lesson-11/index.html`
+- Main page now groups lessons into three weekly sections:
+  - week 1: lessons 1-5
+  - week 2: lessons 6-10
+  - week 3: placeholder cards for lessons 11-15
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
@@ -29,6 +34,7 @@
   - `lessons/lesson-8/{index.html, lesson-8.css, lesson-8.js}`
   - `lessons/lesson-9/{index.html, lesson-9.css, lesson-9.js}`
   - `lessons/lesson-10/{index.html, lesson-10.css, lesson-10.js, week-placeholder.css}`
+  - `lessons/lesson-11/{index.html, lesson-11.css, lesson-11.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -92,6 +98,9 @@
 - Lesson 10 request body is JSON with:
   - `model`
   - `messages`
+- Lesson 11 request body is JSON with:
+  - `model`
+  - `messages`
 - Lesson 10 demonstrates three context strategies:
   - Sliding Window sends and shows only the latest N messages in the active context view
   - Sticky Facts sends structured facts plus the dialog history and updates facts with a separate auxiliary model request; it does not expose context/history popup UI or message-limit UI
@@ -100,6 +109,18 @@
 - Proxy accepts either `input` or non-empty `messages`
 - Proxy prepends the system message on the backend side
 - Dev server now resolves folder URLs like `/lessons/lesson1/` to `index.html`
+- Lesson 11 reuses `LLMCaller`, shows current dialog inline, and opens three memory modals:
+  - short memory = current in-page dialog
+  - working memory = `memory.md` fallback to `memory/memory.md`
+  - long-term memory = `docs/local_docs/{solution.md, knowledge.md}`
+- Lesson 11 asks the main LLM response to embed hidden memory tags:
+  - `<solution>...</solution>` for project-specific decisions
+  - `<knowledge>...</knowledge>` for reusable knowledge
+  - frontend strips these tags from visible answer and saves their contents through backend append endpoints
+- Dev server exposes lesson 11 helper endpoints:
+  - `GET /api/lesson11/memory`
+  - `POST /api/lesson11/memory/remember`
+  - `POST /api/lesson11/memory/save`
 
 ## DeepSeek Notes
 
@@ -163,6 +184,9 @@
 - Lesson 10 does not expose an active-context payload preview; Sticky Facts has no message-count limit and sends its full dialog history together with durable facts
 - Lesson 10 Sticky Facts hides the generic history/context button, keeps the facts modal close button enabled, and does not show prompt-estimate or active-context message-count UI
 - Lesson 10 Branching keeps checkpoint creation and branch switching controls enabled for manual checkpoint-based branching
+- Task 11 adds a real lesson 11 page and links it from the week 3 card on the main page
+- Lesson 11 can read project memory through dev-server endpoints and append classified notes to `docs/local_docs/*.md` in Markdown format
+- Lesson 11 explicit commands `сохрани это:` and `запомни:` force a long-term memory save attempt through the backend
 
 ## Git State / Branching
 
@@ -186,6 +210,8 @@
   - `npm run preview`
 - Expected dev URL:
   - `http://localhost:4173`
+- Static preview URL:
+  - `http://localhost:8080`
 
 ## Things To Watch Next
 

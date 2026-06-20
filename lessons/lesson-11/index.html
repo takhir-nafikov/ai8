@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Урок 11 · AI8</title>
+    <link rel="stylesheet" href="./lesson-11.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson-11.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Урок 11</p>
+          <h1>Диалог с LLM и тремя типами памяти</h1>
+          <p>
+            Страница использует существующий локальный proxy для общения с LLM и показывает три слоя
+            памяти: краткую историю текущего диалога, рабочую память проекта и долговременную память в
+            Markdown-файлах.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/deepseek">
+          <label class="field-label" for="prompt-input">Введите сообщение</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Предложи, как организовать память агента для новой страницы урока."
+            required
+          ></textarea>
+
+          <div class="button-row memory-toolbar">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+            <button id="short-memory-button" class="secondary-button" type="button">Короткая память</button>
+            <button id="working-memory-button" class="secondary-button" type="button">Рабочая память</button>
+            <button id="long-memory-button" class="secondary-button" type="button">Долговременная память</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p class="response-meta">
+            Сообщений в текущем диалоге: <strong id="history-count">0</strong>
+          </p>
+          <p id="memory-status" class="response-meta">Долговременная память пока не обновлялась.</p>
+
+          <div id="response-output" class="response-output response-output-scrollable">Ответ появится здесь.</div>
+
+          <div class="inline-history">
+            <div class="history-dialog-header inline-history-header">
+              <div>
+                <p class="eyebrow">Короткая память</p>
+                <h2 class="history-dialog-title">Текущий диалог</h2>
+              </div>
+            </div>
+            <div id="history-list-inline" class="history-list">
+              <p class="history-empty">Короткая память пока пуста.</p>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <dialog id="short-memory-dialog" class="history-dialog">
+      <div class="history-dialog-content">
+        <div class="history-dialog-header">
+          <div>
+            <p class="eyebrow">Короткая память</p>
+            <h2 class="history-dialog-title">Текущий диалог пользователя с LLM</h2>
+          </div>
+          <button id="close-short-memory-button" class="secondary-button" type="button">Закрыть</button>
+        </div>
+
+        <div id="short-memory-list" class="history-list">
+          <p class="history-empty">Короткая память пока пуста.</p>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="working-memory-dialog" class="history-dialog">
+      <div class="history-dialog-content">
+        <div class="history-dialog-header">
+          <div>
+            <p class="eyebrow">Рабочая память</p>
+            <h2 class="history-dialog-title">Содержимое memory.md</h2>
+          </div>
+          <button id="close-working-memory-button" class="secondary-button" type="button">Закрыть</button>
+        </div>
+
+        <div id="working-memory-content" class="memory-modal-body">
+          <p class="history-empty">Рабочая память пока пуста.</p>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog id="long-memory-dialog" class="history-dialog">
+      <div class="history-dialog-content">
+        <div class="history-dialog-header">
+          <div>
+            <p class="eyebrow">Долговременная память</p>
+            <h2 class="history-dialog-title">Solution и Knowledge</h2>
+          </div>
+          <button id="close-long-memory-button" class="secondary-button" type="button">Закрыть</button>
+        </div>
+
+        <div class="memory-split">
+          <article class="memory-pane">
+            <h3 class="memory-pane-title">Solution</h3>
+            <div id="solution-memory-content" class="memory-modal-body">
+              <p class="history-empty">Пока пусто.</p>
+            </div>
+          </article>
+
+          <article class="memory-pane">
+            <h3 class="memory-pane-title">Knowledge</h3>
+            <div id="knowledge-memory-content" class="memory-modal-body">
+              <p class="history-empty">Пока пусто.</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </dialog>
+  </body>
+</html>
