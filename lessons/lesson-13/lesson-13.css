@@ -1,0 +1,162 @@
+@import "../lesson-10/lesson-10.css";
+
+.pipeline-shell {
+  display: grid;
+  gap: 1rem;
+}
+
+.coordinator-card,
+.state-machine-card,
+.agent-card,
+.result-card {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(73, 55, 31, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.agent-flow {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.agent-card-header,
+.state-machine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.agent-card-title {
+  margin: 0.2rem 0 0;
+  font-size: 1.25rem;
+}
+
+.agent-output {
+  margin: 0 0 1rem;
+  color: var(--text-main);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.agent-summary {
+  margin: 0 0 1rem;
+  color: var(--text-soft);
+  line-height: 1.6;
+}
+
+.flow-arrow {
+  justify-self: center;
+  color: #7e4e1d;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.state-machine {
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+.state-track {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.state-node {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 3rem;
+  padding: 0.6rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(73, 55, 31, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.state-arrow {
+  justify-self: center;
+  color: #7e4e1d;
+  font-weight: 700;
+}
+
+.state-side-panel {
+  display: grid;
+  gap: 0.65rem;
+  padding-top: 0.35rem;
+  border-top: 1px solid rgba(73, 55, 31, 0.12);
+}
+
+.state-side-title {
+  margin: 0;
+}
+
+.state-side-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+}
+
+.state-node-side {
+  min-height: 2.7rem;
+}
+
+.state-node-active {
+  border-color: rgba(181, 122, 54, 0.45);
+  background: rgba(245, 228, 202, 0.95);
+  color: #6e3d0c;
+}
+
+.state-node-waiting {
+  border-color: rgba(181, 122, 54, 0.45);
+  background: rgba(255, 248, 231, 0.95);
+  color: #8a551e;
+  box-shadow: inset 0 0 0 1px rgba(181, 122, 54, 0.12);
+}
+
+.state-node-completed {
+  border-color: rgba(47, 111, 69, 0.32);
+  background: rgba(236, 248, 240, 0.96);
+  color: var(--success);
+}
+
+.state-node-next {
+  border-style: dashed;
+  color: var(--text-main);
+}
+
+.agent-card-active {
+  border-color: rgba(181, 122, 54, 0.45);
+  box-shadow: 0 12px 28px rgba(145, 90, 33, 0.12);
+}
+
+.agent-card-completed {
+  border-color: rgba(47, 111, 69, 0.24);
+}
+
+.agent-card-paused {
+  border-color: rgba(92, 110, 142, 0.24);
+}
+
+.agent-card-error {
+  border-color: rgba(165, 63, 44, 0.25);
+}
+
+.agent-dialog-meta {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.review-feedback-input {
+  margin: 0.75rem 0 1rem;
+}
+
+#review-actions[hidden] {
+  display: none;
+}

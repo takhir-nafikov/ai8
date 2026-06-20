@@ -18,6 +18,7 @@
   - `lessons/lesson-10/index.html`
   - `lessons/lesson-11/index.html`
   - `lessons/lesson-12/index.html`
+  - `lessons/lesson-13/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -37,6 +38,7 @@
   - `lessons/lesson-10/{index.html, lesson-10.css, lesson-10.js, week-placeholder.css}`
   - `lessons/lesson-11/{index.html, lesson-11.css, lesson-11.js}`
   - `lessons/lesson-12/{index.html, lesson-12.css, lesson-12.js}`
+  - `lessons/lesson-13/{index.html, lesson-13.css, lesson-13.js, agent-llm-caller.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -106,6 +108,9 @@
 - Lesson 12 request body is JSON with:
   - `model`
   - `messages`
+- Lesson 13 request body is JSON with:
+  - `model`
+  - `messages`
 - Lesson 10 demonstrates three context strategies:
   - Sliding Window sends and shows only the latest N messages in the active context view
   - Sticky Facts sends structured facts plus the dialog history and updates facts with a separate auxiliary model request; it does not expose context/history popup UI or message-limit UI
@@ -128,6 +133,21 @@
   - `POST /api/lesson11/memory/save`
 - Dev server exposes lesson 12 helper endpoint:
   - `GET /api/lesson12/profile?name=profile-a|profile-b`
+- Lesson 13 reuses `LLMCaller` through a dedicated `AgentLLMCaller` wrapper per role:
+  - Planner
+  - Executor
+  - Validator
+  - Coordinator
+- Lesson 13 stores pipeline state in browser `localStorage` and can pause/resume from saved snapshots
+- Lesson 13 state machine:
+  - `IDLE -> PLANNING -> REVIEW -> EXECUTING -> REVIEW -> VALIDATING -> REVIEW -> COMPLETED`
+  - any active or review state can transition to `PAUSED` and resume from previous state
+  - any step can transition to `ERROR`
+- Lesson 13 now uses one universal Review Block for the whole workflow instead of separate per-stage approval flows
+- Lesson 13 review feedback is stored in the current agent history as a `Reviewer` message and the same agent reruns with that feedback before any next stage starts
+- Lesson 13 keeps agent histories and system prompts out of the main page and shows them only in per-agent modal dialogs on demand
+- Lesson 13 state machine is rendered as a vertical workflow block with separate `PAUSED` and `ERROR` service states, which keeps the layout stable on narrow and wide screens
+- Lesson 13 can now clear the whole workflow snapshot or clear individual agents; clearing Planner also resets Executor and Validator, and clearing Executor resets Validator so stale downstream histories do not survive in `localStorage`
 
 ## DeepSeek Notes
 
@@ -196,6 +216,7 @@
 - Lesson 11 explicit commands `сохрани это:` and `запомни:` force a long-term memory save attempt through the backend
 - Task 12 adds profile files `docs/local_docs/profile-a.md` and `docs/local_docs/profile-b.md`
 - Lesson 12 compares two hidden system profiles and uses the selected profile text as a prepended system message for the next LLM request
+- Task 13 adds a multi-agent lesson with Planner, Executor, Validator and Coordinator cards plus a visible state machine
 
 ## Git State / Branching
 
