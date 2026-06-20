@@ -20,6 +20,7 @@
   - `lessons/lesson-12/index.html`
   - `lessons/lesson-13/index.html`
   - `lessons/lesson-14/index.html`
+  - `lessons/lesson-15/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -41,6 +42,7 @@
   - `lessons/lesson-12/{index.html, lesson-12.css, lesson-12.js}`
   - `lessons/lesson-13/{index.html, lesson-13.css, lesson-13.js, agent-llm-caller.js}`
   - `lessons/lesson-14/{index.html, lesson-14.css, lesson-14.js}`
+  - `lessons/lesson-15/{index.html, lesson-15.css, lesson-15.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -160,6 +162,10 @@
 - Lesson 14 loads invariants from `docs/local_docs/invariants.md` through the local dev-server endpoint and falls back to embedded invariants if markdown loading is unavailable
 - Lesson 14 post-processes denied invariant checks so the user sees not only what is forbidden, but also what implementation style should be used instead
 - Lesson 14 shows a human-readable success message in the invariant-check block when the request passes, instead of rendering raw `allowed=true` diagnostics
+- Lesson 15 reuses lesson 13 pipeline UX and lesson 14 invariant loading/checking rules
+- Lesson 15 inserts `CHECKING_INVARIANTS` between each agent stage and `REVIEW`
+- Lesson 15 automatically retries Planner / Executor / Validator up to 3 times when a stage result violates invariants, using `reason` and `fix_instruction` to build the next prompt
+- Lesson 15 writes invariant failures into the current agent history as `Invariant Checker` entries and only shows the invariant warning block if the stage still fails after the retry limit
 
 ## DeepSeek Notes
 

@@ -90,7 +90,10 @@ export class AgentLLMCaller extends LLMCaller {
 
   getTransportHistory() {
     return this.history.map((message) => ({
-      role: message.role === "reviewer" ? "user" : message.role,
+      role:
+        message.role === "reviewer" || message.role === "invariant-checker"
+          ? "user"
+          : message.role,
       content: message.content
     }));
   }

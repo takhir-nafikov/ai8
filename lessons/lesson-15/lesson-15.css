@@ -1,0 +1,19 @@
+@import "../lesson-13/lesson-13.css";
+
+.invariant-review-block {
+  margin: 1rem 0 1.25rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(165, 63, 44, 0.28);
+  background: rgba(255, 240, 236, 0.95);
+}
+
+.invariant-review-title {
+  margin: 0 0 0.6rem;
+  color: #8b2f1f;
+  font-weight: 700;
+}
+
+#invariant-review-block[hidden] {
+  display: none;
+}
