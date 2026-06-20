@@ -1,0 +1,25 @@
+@import "../lesson-12/lesson-12.css";
+
+.review-block {
+  margin-top: 1rem;
+}
+
+.warning-block {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(165, 63, 44, 0.28);
+  background: rgba(255, 240, 236, 0.95);
+}
+
+.warning-title {
+  margin: 0 0 0.35rem;
+  color: #8b2f1f;
+  font-weight: 700;
+}
+
+.warning-reason {
+  margin: 0;
+  color: #6c392f;
+  line-height: 1.6;
+}

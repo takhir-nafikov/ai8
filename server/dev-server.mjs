@@ -15,6 +15,7 @@ const lesson12ProfileFiles = {
   "profile-a": path.join(rootDir, "docs", "local_docs", "profile-a.md"),
   "profile-b": path.join(rootDir, "docs", "local_docs", "profile-b.md")
 };
+const lesson14InvariantsFile = path.join(rootDir, "docs", "local_docs", "invariants.md");
 const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
 
 Определи, нужно ли сохранить информацию в долговременную память проекта.
@@ -620,6 +621,20 @@ const server = createServer(async (request, response) => {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to read lesson 12 profile.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/lesson14/invariants") {
+    try {
+      const content = await readOptionalText(lesson14InvariantsFile);
+      sendJson(response, 200, {
+        path: "docs/local_docs/invariants.md",
+        content
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to read lesson 14 invariants.";
       sendJson(response, 500, { error: message });
     }
     return;

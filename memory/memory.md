@@ -19,6 +19,7 @@
   - `lessons/lesson-11/index.html`
   - `lessons/lesson-12/index.html`
   - `lessons/lesson-13/index.html`
+  - `lessons/lesson-14/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -39,6 +40,7 @@
   - `lessons/lesson-11/{index.html, lesson-11.css, lesson-11.js}`
   - `lessons/lesson-12/{index.html, lesson-12.css, lesson-12.js}`
   - `lessons/lesson-13/{index.html, lesson-13.css, lesson-13.js, agent-llm-caller.js}`
+  - `lessons/lesson-14/{index.html, lesson-14.css, lesson-14.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -133,6 +135,8 @@
   - `POST /api/lesson11/memory/save`
 - Dev server exposes lesson 12 helper endpoint:
   - `GET /api/lesson12/profile?name=profile-a|profile-b`
+- Dev server exposes lesson 14 helper endpoint:
+  - `GET /api/lesson14/invariants`
 - Lesson 13 reuses `LLMCaller` through a dedicated `AgentLLMCaller` wrapper per role:
   - Planner
   - Executor
@@ -148,6 +152,14 @@
 - Lesson 13 keeps agent histories and system prompts out of the main page and shows them only in per-agent modal dialogs on demand
 - Lesson 13 state machine is rendered as a vertical workflow block with separate `PAUSED` and `ERROR` service states, which keeps the layout stable on narrow and wide screens
 - Lesson 13 can now clear the whole workflow snapshot or clear individual agents; clearing Planner also resets Executor and Validator, and clearing Executor resets Validator so stale downstream histories do not survive in `localStorage`
+- Task 14 adds `docs/local_docs/invariants.md` as the source of truth for project invariants
+- Lesson 14 is based on lesson 12 layout, but removes profile switching and performs a separate invariants check before the main LLM call
+- Lesson 14 uses the same `LLMCaller` infrastructure twice:
+  - first for the invariants classifier request
+  - then for the main answer request only if `allowed=true`
+- Lesson 14 loads invariants from `docs/local_docs/invariants.md` through the local dev-server endpoint and falls back to embedded invariants if markdown loading is unavailable
+- Lesson 14 post-processes denied invariant checks so the user sees not only what is forbidden, but also what implementation style should be used instead
+- Lesson 14 shows a human-readable success message in the invariant-check block when the request passes, instead of rendering raw `allowed=true` diagnostics
 
 ## DeepSeek Notes
 
