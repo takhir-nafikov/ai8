@@ -11,6 +11,10 @@ const longTermMemoryFiles = {
   solution: path.join(rootDir, "docs", "local_docs", "solution.md"),
   knowledge: path.join(rootDir, "docs", "local_docs", "knowledge.md")
 };
+const lesson12ProfileFiles = {
+  "profile-a": path.join(rootDir, "docs", "local_docs", "profile-a.md"),
+  "profile-b": path.join(rootDir, "docs", "local_docs", "profile-b.md")
+};
 const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
 
 Определи, нужно ли сохранить информацию в долговременную память проекта.
@@ -594,6 +598,28 @@ const server = createServer(async (request, response) => {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to read lesson 11 memory.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/lesson12/profile") {
+    try {
+      const profileName = requestUrl.searchParams.get("name") ?? "";
+      const filePath = lesson12ProfileFiles[profileName];
+
+      if (!filePath) {
+        sendJson(response, 400, { error: "Unknown lesson 12 profile." });
+        return;
+      }
+
+      const content = await readOptionalText(filePath);
+      sendJson(response, 200, {
+        name: profileName,
+        content
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to read lesson 12 profile.";
       sendJson(response, 500, { error: message });
     }
     return;

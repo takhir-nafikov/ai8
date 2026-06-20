@@ -17,6 +17,7 @@
   - `lessons/lesson-9/index.html`
   - `lessons/lesson-10/index.html`
   - `lessons/lesson-11/index.html`
+  - `lessons/lesson-12/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -35,6 +36,7 @@
   - `lessons/lesson-9/{index.html, lesson-9.css, lesson-9.js}`
   - `lessons/lesson-10/{index.html, lesson-10.css, lesson-10.js, week-placeholder.css}`
   - `lessons/lesson-11/{index.html, lesson-11.css, lesson-11.js}`
+  - `lessons/lesson-12/{index.html, lesson-12.css, lesson-12.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -101,6 +103,9 @@
 - Lesson 11 request body is JSON with:
   - `model`
   - `messages`
+- Lesson 12 request body is JSON with:
+  - `model`
+  - `messages`
 - Lesson 10 demonstrates three context strategies:
   - Sliding Window sends and shows only the latest N messages in the active context view
   - Sticky Facts sends structured facts plus the dialog history and updates facts with a separate auxiliary model request; it does not expose context/history popup UI or message-limit UI
@@ -121,6 +126,8 @@
   - `GET /api/lesson11/memory`
   - `POST /api/lesson11/memory/remember`
   - `POST /api/lesson11/memory/save`
+- Dev server exposes lesson 12 helper endpoint:
+  - `GET /api/lesson12/profile?name=profile-a|profile-b`
 
 ## DeepSeek Notes
 
@@ -187,6 +194,8 @@
 - Task 11 adds a real lesson 11 page and links it from the week 3 card on the main page
 - Lesson 11 can read project memory through dev-server endpoints and append classified notes to `docs/local_docs/*.md` in Markdown format
 - Lesson 11 explicit commands `сохрани это:` and `запомни:` force a long-term memory save attempt through the backend
+- Task 12 adds profile files `docs/local_docs/profile-a.md` and `docs/local_docs/profile-b.md`
+- Lesson 12 compares two hidden system profiles and uses the selected profile text as a prepended system message for the next LLM request
 
 ## Git State / Branching
 
