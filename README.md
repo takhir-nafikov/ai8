@@ -11,6 +11,7 @@
 - Локальный `dev server` умеет:
   - работать как mock, если API ключ не задан;
   - работать как proxy к DeepSeek, если ключ задан в `.env`;
+  - подключаться к публичному Context7 MCP через server-side endpoint и отдавать реальный список tools для урока 16;
   - отдавать runtime-config через `/api/config`, чтобы страница видела текущие `endpoint` и `model`.
 
 ## Структура проекта
@@ -53,7 +54,7 @@
 npm install
 ```
 
-Сейчас у проекта нет обязательных npm-зависимостей, поэтому `npm install` нужен только для привычного npm workflow и возможного дальнейшего расширения.
+Для урока 16 проект использует npm-зависимости официального MCP JavaScript SDK, поэтому `npm install` обязателен.
 
 ## Локальный запуск
 
@@ -113,6 +114,7 @@ DEEPSEEK_API_KEY=your_secret_key
 DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
 DEEPSEEK_MODEL=deepseek-v4-flash
 MOCK_DEEPSEEK=false
+CONTEXT7_API_KEY=
 ```
 
 Потом запустите:
@@ -189,6 +191,28 @@ Proxy не требует одновременной передачи `input` и
 - lesson 1 продолжает работать через `input`;
 - lesson 2 использует `messages`;
 - сервер добавляет системное сообщение на backend-стороне.
+
+### Урок 16
+
+URL:
+
+- `http://localhost:4173/lessons/lesson-16/`
+
+Урок 16 показывает server-side подключение к публичному Context7 MCP.
+
+- frontend вызывает `GET /api/lesson16/context7-tools`;
+- backend подключается к `https://mcp.context7.com/mcp`;
+- backend использует transport `Streamable HTTP`;
+- backend через официальный JavaScript SDK выполняет реальный `listTools`;
+- frontend рендерит tools из ответа MCP без hardcode.
+
+Если у вас есть ключ Context7, добавьте его в `.env`:
+
+```env
+CONTEXT7_API_KEY=your_context7_api_key
+```
+
+Если ключ не задан, урок всё равно пытается обратиться к публичному endpoint. В случае отказа Context7 UI покажет ошибку подключения без mock-данных.
 
 ## Почему нельзя хранить API key на GitHub Pages
 

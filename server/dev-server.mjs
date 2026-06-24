@@ -2,6 +2,7 @@ import { createServer } from "node:http";
 import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,6 +17,7 @@ const lesson12ProfileFiles = {
   "profile-b": path.join(rootDir, "docs", "local_docs", "profile-b.md")
 };
 const lesson14InvariantsFile = path.join(rootDir, "docs", "local_docs", "invariants.md");
+const context7McpUrl = "https://mcp.context7.com/mcp";
 const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
 
 Определи, нужно ли сохранить информацию в долговременную память проекта.
@@ -387,6 +389,52 @@ async function saveLongTermMemoryEntry(target, text) {
   };
 }
 
+function getContext7ApiKey() {
+  return process.env.CONTEXT7_API_KEY ?? localEnv.CONTEXT7_API_KEY ?? "";
+}
+
+async function getContext7Tools() {
+  const requestHeaders = {};
+  const context7ApiKey = getContext7ApiKey();
+
+  if (context7ApiKey) {
+    requestHeaders.CONTEXT7_API_KEY = context7ApiKey;
+  }
+
+  const client = new Client(
+    {
+      name: "ai8-context7-client",
+      version: "0.1.0"
+    },
+    {
+      capabilities: {}
+    }
+  );
+  const transport = new StreamableHTTPClientTransport(new URL(context7McpUrl), {
+    requestInit: {
+      headers: requestHeaders
+    }
+  });
+
+  try {
+    await client.connect(transport);
+    const result = await client.listTools();
+
+    return {
+      source: "context7-mcp",
+      transport: "streamable-http",
+      endpoint: context7McpUrl,
+      tools: result.tools.map((tool) => ({
+        name: tool.name,
+        description: typeof tool.description === "string" ? tool.description : "",
+        inputSchema: tool.inputSchema ?? null
+      }))
+    };
+  } finally {
+    await transport.close().catch(() => {});
+  }
+}
+
 async function classifyMemoryEntry({ role, content, history, forceSave = false }) {
   const longTerm = await readLongTermMemory();
   const existingSolution = longTerm.solution.content;
@@ -636,6 +684,22 @@ const server = createServer(async (request, response) => {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to read lesson 14 invariants.";
       sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "GET" && requestUrl.pathname === "/api/lesson16/context7-tools") {
+    try {
+      const payload = await getContext7Tools();
+      sendJson(response, 200, payload);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to load Context7 MCP tools.";
+      sendJson(response, 500, {
+        error: message,
+        source: "context7-mcp",
+        transport: "streamable-http",
+        endpoint: context7McpUrl
+      });
     }
     return;
   }

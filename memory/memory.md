@@ -21,10 +21,12 @@
   - `lessons/lesson-13/index.html`
   - `lessons/lesson-14/index.html`
   - `lessons/lesson-15/index.html`
+  - `lessons/lesson-16/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
-  - week 3: placeholder cards for lessons 11-15
+  - week 3: lessons 11-15
+  - extra week 3 block: lessons 16-20
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
@@ -43,6 +45,7 @@
   - `lessons/lesson-13/{index.html, lesson-13.css, lesson-13.js, agent-llm-caller.js}`
   - `lessons/lesson-14/{index.html, lesson-14.css, lesson-14.js}`
   - `lessons/lesson-15/{index.html, lesson-15.css, lesson-15.js}`
+  - `lessons/lesson-16/{index.html, lesson-16.css, lesson-16.js, context7-mcp-service.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -139,6 +142,8 @@
   - `GET /api/lesson12/profile?name=profile-a|profile-b`
 - Dev server exposes lesson 14 helper endpoint:
   - `GET /api/lesson14/invariants`
+- Dev server exposes lesson 16 helper endpoint:
+  - `GET /api/lesson16/context7-tools`
 - Lesson 13 reuses `LLMCaller` through a dedicated `AgentLLMCaller` wrapper per role:
   - Planner
   - Executor
@@ -166,6 +171,14 @@
 - Lesson 15 inserts `CHECKING_INVARIANTS` between each agent stage and `REVIEW`
 - Lesson 15 automatically retries Planner / Executor / Validator up to 3 times when a stage result violates invariants, using `reason` and `fix_instruction` to build the next prompt
 - Lesson 15 writes invariant failures into the current agent history as `Invariant Checker` entries and only shows the invariant warning block if the stage still fails after the retry limit
+- Lesson 16 is a standalone page for Context7 MCP connection
+- Lesson 16 does not call remote MCP directly from the browser; it uses the local dev-server endpoint
+- Lesson 16 backend uses the official JavaScript package `@modelcontextprotocol/client`
+- Lesson 16 backend uses `StreamableHTTPClientTransport` to connect to `https://mcp.context7.com/mcp`
+- Lesson 16 reads optional `CONTEXT7_API_KEY` only from backend environment / `.env`
+- Real `listTools` currently returns:
+  - `resolve-library-id`
+  - `query-docs`
 
 ## DeepSeek Notes
 

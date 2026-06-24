@@ -1,0 +1,71 @@
+@import "../lesson-12/lesson-12.css";
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.9rem;
+  margin: 1rem 0 1.2rem;
+}
+
+.meta-card {
+  padding: 1rem;
+  border: 1px solid rgba(145, 90, 33, 0.14);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78), rgba(248, 241, 231, 0.9));
+}
+
+.meta-title {
+  margin: 0 0 0.35rem;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}
+
+.meta-value {
+  margin: 0;
+  color: var(--text-main);
+  overflow-wrap: anywhere;
+}
+
+.tools-block {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.tools-block-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tools-block-header h2 {
+  margin: 0;
+}
+
+.tools-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.tool-card {
+  padding: 1rem;
+  border: 1px solid rgba(73, 55, 31, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.tool-name {
+  margin: 0 0 0.45rem;
+  font-size: 1.05rem;
+}
+
+.tool-description {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.tool-schema {
+  margin-top: 0.85rem;
+}
+
+.tool-schema pre {
+  margin: 0;
+}
