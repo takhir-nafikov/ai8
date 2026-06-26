@@ -19,6 +19,8 @@ const lesson12ProfileFiles = {
 const lesson14InvariantsFile = path.join(rootDir, "docs", "local_docs", "invariants.md");
 const context7McpUrl = "https://mcp.context7.com/mcp";
 const lesson17McpHost = "127.0.0.1";
+const lesson18AllowedIntervals = new Set([5000, 60000]);
+const lesson18History = [];
 const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
 
 Определи, нужно ли сохранить информацию в долговременную память проекта.
@@ -896,6 +898,50 @@ function parseMessages(value) {
   return messages.length > 0 ? messages : null;
 }
 
+function getLesson18IntervalLabel(intervalMs) {
+  return intervalMs === 60000 ? "1 минута" : "5 секунд";
+}
+
+function parseLesson18Interval(value) {
+  const numericValue = Number(value);
+  return lesson18AllowedIntervals.has(numericValue) ? numericValue : null;
+}
+
+function extractLesson18RequestMeta(payload) {
+  const parsedInterval = parseLesson18Interval(payload?.repeatIntervalMs);
+  const messages = parseMessages(payload?.messages);
+
+  if (parsedInterval) {
+    return {
+      repeatIntervalMs: parsedInterval,
+      sanitizedMessages: messages
+    };
+  }
+
+  if (!messages || messages.length === 0) {
+    return {
+      repeatIntervalMs: null,
+      sanitizedMessages: messages
+    };
+  }
+
+  const metaMessage = messages.find(
+    (message) => message.role === "system" && /^repeatIntervalMs=\d+$/u.test(message.content)
+  );
+
+  if (!metaMessage) {
+    return {
+      repeatIntervalMs: null,
+      sanitizedMessages: messages
+    };
+  }
+
+  return {
+    repeatIntervalMs: parseLesson18Interval(metaMessage.content.split("=")[1]),
+    sanitizedMessages: messages.filter((message) => message !== metaMessage)
+  };
+}
+
 function buildUpstreamRequestBody({ input, messages, model, temperature, maxTokens, stop }) {
   return {
     model,
@@ -916,6 +962,112 @@ function buildUpstreamRequestBody({ input, messages, model, temperature, maxToke
     ...(stop ? { stop } : {}),
     stream: false
   };
+}
+
+async function runStandardDeepSeekRequest({ input, messages, model, temperature = null, maxTokens = null, stop = null }) {
+  if (!input && !messages) {
+    throw new Error("Field 'input' or non-empty 'messages' is required.");
+  }
+
+  if (!env.DEEPSEEK_API_URL) {
+    throw new Error("DeepSeek API URL is not configured.");
+  }
+
+  if (!model) {
+    throw new Error("DeepSeek model is not configured.");
+  }
+
+  if (!allowedModels.has(model)) {
+    throw new Error("Only DeepSeek V4 chat completion models are allowed for this project.");
+  }
+
+  const upstreamRequestBody = buildUpstreamRequestBody({
+    input,
+    messages,
+    model,
+    temperature,
+    maxTokens,
+    stop
+  });
+
+  if (env.MOCK_DEEPSEEK === "true" || !env.DEEPSEEK_API_KEY) {
+    return {
+      answer: `Mock response for: ${input || messages.at(-1)?.content || ""}`,
+      model,
+      mocked: true,
+      requestBody: upstreamRequestBody,
+      usage: null
+    };
+  }
+
+  const upstreamResponse = await fetch(env.DEEPSEEK_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify(upstreamRequestBody)
+  });
+
+  const upstreamPayload = await upstreamResponse.json().catch(() => null);
+  if (!upstreamResponse.ok) {
+    const message =
+      upstreamPayload?.error?.message ??
+      upstreamPayload?.message ??
+      `DeepSeek request failed with status ${upstreamResponse.status}.`;
+    throw new Error(message);
+  }
+
+  return {
+    answer: extractAnswer(upstreamPayload) || "DeepSeek returned an empty response.",
+    model,
+    mocked: false,
+    requestBody: upstreamRequestBody,
+    usage: extractUsage(upstreamPayload)
+  };
+}
+
+function addLesson18HistoryItem({ prompt, answer, receivedAt, isRepeated, intervalMs }) {
+  lesson18History.unshift({
+    prompt,
+    answer,
+    receivedAt,
+    isRepeated,
+    intervalMs
+  });
+
+  if (lesson18History.length > 100) {
+    lesson18History.length = 100;
+  }
+}
+
+function scheduleLesson18Repeat({ prompt, model, intervalMs }) {
+  setTimeout(async () => {
+    try {
+      const result = await runStandardDeepSeekRequest({
+        input: prompt,
+        messages: null,
+        model
+      });
+
+      addLesson18HistoryItem({
+        prompt,
+        answer: result.answer,
+        receivedAt: new Date().toISOString(),
+        isRepeated: true,
+        intervalMs
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Automatic repeat request failed.";
+      addLesson18HistoryItem({
+        prompt,
+        answer: `[Ошибка повторного запроса] ${message}`,
+        receivedAt: new Date().toISOString(),
+        isRepeated: true,
+        intervalMs
+      });
+    }
+  }, intervalMs);
 }
 
 const localEnv = await loadLocalEnv();
@@ -1010,6 +1162,13 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "GET" && requestUrl.pathname === "/api/lesson18/history") {
+    sendJson(response, 200, {
+      items: lesson18History
+    });
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/lesson17/pokemon-chat") {
     try {
       const rawBody = await readRequestBody(request);
@@ -1040,6 +1199,52 @@ const server = createServer(async (request, response) => {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected lesson 17 proxy error.";
       sendJson(response, 500, { error: message, mcpEndpoint: getLesson17McpUrl() });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson18/repeat-chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const input = typeof payload.input === "string" ? payload.input.trim() : "";
+      const { repeatIntervalMs, sanitizedMessages } = extractLesson18RequestMeta(payload);
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+
+      if (!repeatIntervalMs) {
+        sendJson(response, 400, { error: "Field 'repeatIntervalMs' must be either 5000 or 60000." });
+        return;
+      }
+
+      const prompt = input || sanitizedMessages?.at(-1)?.content || "";
+      const result = await runStandardDeepSeekRequest({
+        input,
+        messages: sanitizedMessages,
+        model
+      });
+
+      addLesson18HistoryItem({
+        prompt,
+        answer: result.answer,
+        receivedAt: new Date().toISOString(),
+        isRepeated: false,
+        intervalMs: repeatIntervalMs
+      });
+
+      scheduleLesson18Repeat({
+        prompt,
+        model,
+        intervalMs: repeatIntervalMs
+      });
+
+      sendJson(response, 200, {
+        ...result,
+        repeatIntervalMs,
+        repeatIntervalLabel: getLesson18IntervalLabel(repeatIntervalMs)
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 18 proxy error.";
+      sendJson(response, 500, { error: message });
     }
     return;
   }

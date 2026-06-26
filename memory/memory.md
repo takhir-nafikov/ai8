@@ -22,6 +22,8 @@
   - `lessons/lesson-14/index.html`
   - `lessons/lesson-15/index.html`
   - `lessons/lesson-16/index.html`
+  - `lessons/lesson-17/index.html`
+  - `lessons/lesson-18/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -190,6 +192,18 @@
 - Dev server adds `POST /api/lesson17/pokemon-chat`
 - Lesson 17 backend uses the MCP client SDK to load tools from the local MCP server, passes them to DeepSeek as OpenAI-compatible function tools, executes returned tool calls through MCP, and returns both final answer and `usedTools`
 - Package script `npm run lesson17:mcp` starts the local Lesson 17 MCP server
+- Lesson 18 is based visually on lesson 17, but does not change lesson 17 MCP behavior
+- Dev server adds lesson 18 endpoints:
+  - `POST /api/lesson18/repeat-chat`
+  - `GET /api/lesson18/history`
+- Lesson 18 stores response history only in process memory, without database or files
+- Lesson 18 schedules an automatic duplicate request on the server with `setTimeout` for either `5000` ms or `60000` ms
+- Each lesson 18 history item stores:
+  - prompt
+  - answer
+  - receivedAt
+  - isRepeated
+  - intervalMs
 
 ## DeepSeek Notes
 
