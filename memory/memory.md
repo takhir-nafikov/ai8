@@ -24,6 +24,7 @@
   - `lessons/lesson-16/index.html`
   - `lessons/lesson-17/index.html`
   - `lessons/lesson-18/index.html`
+  - `lessons/lesson-19/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -204,6 +205,15 @@
   - receivedAt
   - isRepeated
   - intervalMs
+- Lesson 19 is visually based on lesson 17 and keeps the same layout style
+- Lesson 19 adds a second local MCP server in `lessons/lesson-19/save-response-mcp-server.mjs`
+- Lesson 19 MCP server runs locally on `http://127.0.0.1:4175/mcp` by default
+- Lesson 19 MCP server exposes tool `save_llm_response_to_txt`
+- Lesson 19 backend endpoints:
+  - `POST /api/lesson19/chat`
+  - `POST /api/lesson19/save-response`
+- Lesson 19 frontend stores the target folder path in `localStorage` key `lesson19.folderPath`
+- Lesson 19 save tool requires an absolute folder path, creates the directory if missing, and saves each answer into a unique file named `llm-response-YYYY-MM-DD-HH-mm-ss.txt`
 
 ## DeepSeek Notes
 

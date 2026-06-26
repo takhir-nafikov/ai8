@@ -19,6 +19,7 @@ const lesson12ProfileFiles = {
 const lesson14InvariantsFile = path.join(rootDir, "docs", "local_docs", "invariants.md");
 const context7McpUrl = "https://mcp.context7.com/mcp";
 const lesson17McpHost = "127.0.0.1";
+const lesson19McpHost = "127.0.0.1";
 const lesson18AllowedIntervals = new Set([5000, 60000]);
 const lesson18History = [];
 const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
@@ -404,6 +405,14 @@ function getLesson17McpUrl() {
   return `http://${lesson17McpHost}:${getLesson17McpPort()}/mcp`;
 }
 
+function getLesson19McpPort() {
+  return process.env.LESSON19_MCP_PORT ?? localEnv.LESSON19_MCP_PORT ?? "4175";
+}
+
+function getLesson19McpUrl() {
+  return `http://${lesson19McpHost}:${getLesson19McpPort()}/mcp`;
+}
+
 async function getContext7Tools() {
   const requestHeaders = {};
   const context7ApiKey = getContext7ApiKey();
@@ -457,6 +466,26 @@ async function withLesson17McpClient(callback) {
     }
   );
   const transport = new StreamableHTTPClientTransport(new URL(getLesson17McpUrl()));
+
+  try {
+    await client.connect(transport);
+    return await callback(client);
+  } finally {
+    await transport.close().catch(() => {});
+  }
+}
+
+async function withLesson19McpClient(callback) {
+  const client = new Client(
+    {
+      name: "ai8-lesson19-client",
+      version: "0.1.0"
+    },
+    {
+      capabilities: {}
+    }
+  );
+  const transport = new StreamableHTTPClientTransport(new URL(getLesson19McpUrl()));
 
   try {
     await client.connect(transport);
@@ -907,6 +936,18 @@ function parseLesson18Interval(value) {
   return lesson18AllowedIntervals.has(numericValue) ? numericValue : null;
 }
 
+function extractToolTextContent(result) {
+  if (!Array.isArray(result?.content)) {
+    return "";
+  }
+
+  return result.content
+    .map((item) => (item?.type === "text" && typeof item.text === "string" ? item.text.trim() : ""))
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
 function extractLesson18RequestMeta(payload) {
   const parsedInterval = parseLesson18Interval(payload?.repeatIntervalMs);
   const messages = parseMessages(payload?.messages);
@@ -1041,6 +1082,49 @@ function addLesson18HistoryItem({ prompt, answer, receivedAt, isRepeated, interv
   }
 }
 
+async function saveLesson19ResponseViaMcp({ folderPath, prompt, answer }) {
+  return withLesson19McpClient(async (mcpClient) => {
+    const result = await mcpClient.callTool({
+      name: "save_llm_response_to_txt",
+      arguments: {
+        folderPath,
+        prompt,
+        answer
+      }
+    });
+
+    if (result?.isError) {
+      throw new Error(extractToolTextContent(result) || "MCP save tool returned an error.");
+    }
+
+    const filePath =
+      typeof result?.structuredContent?.filePath === "string"
+        ? result.structuredContent.filePath
+        : extractToolTextContent(result);
+
+    if (!filePath) {
+      throw new Error("MCP save tool returned no file path.");
+    }
+
+    return {
+      filePath,
+      usedTools: [
+        {
+          name: "save_llm_response_to_txt",
+          argumentsSummary:
+            summarizeStructuredValue({
+              folderPath,
+              prompt,
+              answer
+            }) || "{}",
+          resultSummary: summarizeStructuredValue({ filePath }) || filePath,
+          isError: false
+        }
+      ]
+    };
+  });
+}
+
 function scheduleLesson18Repeat({ prompt, model, intervalMs }) {
   setTimeout(async () => {
     try {
@@ -1166,6 +1250,66 @@ const server = createServer(async (request, response) => {
     sendJson(response, 200, {
       items: lesson18History
     });
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson19/chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.input === "string" ? payload.input.trim() : "";
+      const messages = parseMessages(payload.messages);
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+
+      const result = await runLesson17PokemonAgent({
+        prompt: prompt || messages?.at(-1)?.content || "",
+        model
+        ,
+        messages
+      });
+
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 19 proxy error.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson19/save-response") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const folderPath = typeof payload.folderPath === "string" ? payload.folderPath.trim() : "";
+      const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+      const answer = typeof payload.answer === "string" ? payload.answer.trim() : "";
+
+      if (!folderPath) {
+        sendJson(response, 400, { error: "Field 'folderPath' is required." });
+        return;
+      }
+
+      if (!prompt) {
+        sendJson(response, 400, { error: "Field 'prompt' is required." });
+        return;
+      }
+
+      if (!answer) {
+        sendJson(response, 400, { error: "Field 'answer' is required." });
+        return;
+      }
+
+      const result = await saveLesson19ResponseViaMcp({
+        folderPath,
+        prompt,
+        answer
+      });
+
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 19 save error.";
+      sendJson(response, 500, { error: message, mcpEndpoint: getLesson19McpUrl() });
+    }
     return;
   }
 
