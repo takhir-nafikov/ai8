@@ -18,6 +18,7 @@ const lesson12ProfileFiles = {
 };
 const lesson14InvariantsFile = path.join(rootDir, "docs", "local_docs", "invariants.md");
 const context7McpUrl = "https://mcp.context7.com/mcp";
+const lesson17McpHost = "127.0.0.1";
 const memoryClassifierPrompt = `Проанализируй новое сообщение в контексте текущей задачи.
 
 Определи, нужно ли сохранить информацию в долговременную память проекта.
@@ -393,6 +394,14 @@ function getContext7ApiKey() {
   return process.env.CONTEXT7_API_KEY ?? localEnv.CONTEXT7_API_KEY ?? "";
 }
 
+function getLesson17McpPort() {
+  return process.env.LESSON17_MCP_PORT ?? localEnv.LESSON17_MCP_PORT ?? "4174";
+}
+
+function getLesson17McpUrl() {
+  return `http://${lesson17McpHost}:${getLesson17McpPort()}/mcp`;
+}
+
 async function getContext7Tools() {
   const requestHeaders = {};
   const context7ApiKey = getContext7ApiKey();
@@ -433,6 +442,303 @@ async function getContext7Tools() {
   } finally {
     await transport.close().catch(() => {});
   }
+}
+
+async function withLesson17McpClient(callback) {
+  const client = new Client(
+    {
+      name: "ai8-lesson17-client",
+      version: "0.1.0"
+    },
+    {
+      capabilities: {}
+    }
+  );
+  const transport = new StreamableHTTPClientTransport(new URL(getLesson17McpUrl()));
+
+  try {
+    await client.connect(transport);
+    return await callback(client);
+  } finally {
+    await transport.close().catch(() => {});
+  }
+}
+
+function convertMcpToolsToDeepSeekTools(tools) {
+  return tools.map((tool) => ({
+    type: "function",
+    function: {
+      name: tool.name,
+      description: typeof tool.description === "string" ? tool.description : "",
+      parameters: tool.inputSchema ?? {
+        type: "object",
+        properties: {}
+      }
+    }
+  }));
+}
+
+function normalizeTextBlock(value) {
+  return typeof value === "string" ? value.replace(/\s+/gu, " ").trim() : "";
+}
+
+function summarizeStructuredValue(value) {
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  try {
+    const serialized = JSON.stringify(value);
+    return serialized.length > 280 ? `${serialized.slice(0, 277)}...` : serialized;
+  } catch {
+    return "";
+  }
+}
+
+function summarizeToolResult(result) {
+  const structured = summarizeStructuredValue(result?.structuredContent);
+  if (structured) {
+    return structured;
+  }
+
+  const textContent = Array.isArray(result?.content)
+    ? result.content
+        .map((item) => (item?.type === "text" && typeof item.text === "string" ? normalizeTextBlock(item.text) : ""))
+        .filter(Boolean)
+        .join(" ")
+    : "";
+
+  if (textContent) {
+    return textContent.length > 280 ? `${textContent.slice(0, 277)}...` : textContent;
+  }
+
+  return result?.isError ? "Tool returned an error." : "Tool returned no visible content.";
+}
+
+function getToolMessageContent(result) {
+  if (result?.structuredContent && typeof result.structuredContent === "object") {
+    return JSON.stringify(result.structuredContent);
+  }
+
+  const textContent = Array.isArray(result?.content)
+    ? result.content
+        .map((item) => (item?.type === "text" && typeof item.text === "string" ? item.text : ""))
+        .filter(Boolean)
+        .join("\n")
+        .trim()
+    : "";
+
+  return textContent || "Tool returned no content.";
+}
+
+function parseToolArguments(rawArguments) {
+  if (!rawArguments) {
+    return {};
+  }
+
+  if (typeof rawArguments === "object") {
+    return rawArguments;
+  }
+
+  if (typeof rawArguments !== "string") {
+    throw new Error("Tool arguments must be a JSON string or object.");
+  }
+
+  try {
+    const parsed = JSON.parse(rawArguments);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    throw new Error("Tool arguments are not valid JSON.");
+  }
+}
+
+async function callLesson17McpTool(client, toolCall) {
+  const toolName = typeof toolCall?.function?.name === "string" ? toolCall.function.name : "";
+  if (!toolName) {
+    throw new Error("Tool call is missing function name.");
+  }
+
+  const toolArguments = parseToolArguments(toolCall?.function?.arguments);
+  const result = await client.callTool({
+    name: toolName,
+    arguments: toolArguments
+  });
+
+  return {
+    toolMessage: {
+      role: "tool",
+      tool_call_id: toolCall.id,
+      content: getToolMessageContent(result)
+    },
+    usedTool: {
+      name: toolName,
+      argumentsSummary: summarizeStructuredValue(toolArguments) || "{}",
+      resultSummary: summarizeToolResult(result),
+      isError: result?.isError === true
+    }
+  };
+}
+
+async function sendDeepSeekToolRequest(messages, model, tools) {
+  const upstreamRequestBody = {
+    model,
+    messages,
+    tools,
+    tool_choice: "auto",
+    thinking: {
+      type: "disabled"
+    },
+    stream: false
+  };
+
+  const upstreamResponse = await fetch(env.DEEPSEEK_API_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${env.DEEPSEEK_API_KEY}`
+    },
+    body: JSON.stringify(upstreamRequestBody)
+  });
+
+  const upstreamPayload = await upstreamResponse.json().catch(() => null);
+  if (!upstreamResponse.ok) {
+    const message =
+      upstreamPayload?.error?.message ??
+      upstreamPayload?.message ??
+      `DeepSeek request failed with status ${upstreamResponse.status}.`;
+    throw new Error(message);
+  }
+
+  return {
+    upstreamRequestBody,
+    upstreamPayload,
+    message: upstreamPayload?.choices?.[0]?.message ?? null
+  };
+}
+
+function buildLesson17MockAnswer(prompt, usedTools) {
+  if (!usedTools.length) {
+    return `Mock mode: запрос получен, но модель не вызвала ни один MCP tool.\n\nЗапрос: ${prompt}`;
+  }
+
+  const toolSummary = usedTools
+    .map((tool, index) => `${index + 1}. ${tool.name}: ${tool.resultSummary}`)
+    .join("\n");
+
+  return `Mock mode: реальный вызов LLM недоступен, поэтому показана сводка по данным MCP tools.\n\n${toolSummary}`;
+}
+
+async function runLesson17PokemonAgent({ prompt, model, messages }) {
+  return withLesson17McpClient(async (mcpClient) => {
+    const listToolsResult = await mcpClient.listTools();
+    const mcpTools = Array.isArray(listToolsResult?.tools) ? listToolsResult.tools : [];
+    const deepSeekTools = convertMcpToolsToDeepSeekTools(mcpTools);
+    const conversation = [
+      {
+        role: "system",
+        content:
+          "You are a concise assistant for a study website. Use the provided Pokemon tools when factual data is needed. If tools are used, base the final answer strictly on tool results."
+      },
+      ...(messages ?? [
+        {
+          role: "user",
+          content: prompt
+        }
+      ])
+    ];
+    const usedTools = [];
+    let lastRequestBody = null;
+
+    if (env.MOCK_DEEPSEEK === "true" || !env.DEEPSEEK_API_KEY) {
+      const loweredPrompt = prompt.toLowerCase();
+
+      if (loweredPrompt.includes("pikachu")) {
+        const pikachuResult = await mcpClient.callTool({
+          name: "get_pokemon_by_name_or_id",
+          arguments: {
+            nameOrId: "pikachu"
+          }
+        });
+        usedTools.push({
+          name: "get_pokemon_by_name_or_id",
+          argumentsSummary: "{\"nameOrId\":\"pikachu\"}",
+          resultSummary: summarizeToolResult(pikachuResult),
+          isError: pikachuResult?.isError === true
+        });
+      }
+
+      if (loweredPrompt.includes("type") || loweredPrompt.includes("тип")) {
+        const electricTypeResult = await mcpClient.callTool({
+          name: "get_type_info",
+          arguments: {
+            nameOrId: "electric"
+          }
+        });
+        usedTools.push({
+          name: "get_type_info",
+          argumentsSummary: "{\"nameOrId\":\"electric\"}",
+          resultSummary: summarizeToolResult(electricTypeResult),
+          isError: electricTypeResult?.isError === true
+        });
+      }
+
+      lastRequestBody = {
+        model,
+        messages: conversation,
+        tools: deepSeekTools,
+        stream: false,
+        mocked: true
+      };
+
+      return {
+        answer: buildLesson17MockAnswer(prompt, usedTools),
+        model,
+        mocked: true,
+        requestBody: lastRequestBody,
+        usedTools
+      };
+    }
+
+    for (let step = 0; step < 6; step += 1) {
+      const { upstreamRequestBody, message } = await sendDeepSeekToolRequest(conversation, model, deepSeekTools);
+      lastRequestBody = upstreamRequestBody;
+
+      if (!message) {
+        throw new Error("DeepSeek returned an empty message payload.");
+      }
+
+      const assistantMessage = {
+        role: "assistant",
+        content: typeof message.content === "string" ? message.content : "",
+        ...(Array.isArray(message.tool_calls) ? { tool_calls: message.tool_calls } : {})
+      };
+      conversation.push(assistantMessage);
+
+      if (!Array.isArray(message.tool_calls) || message.tool_calls.length === 0) {
+        return {
+          answer: extractAnswer({
+            choices: [
+              {
+                message
+              }
+            ]
+          }) || "DeepSeek returned an empty response.",
+          model,
+          mocked: false,
+          requestBody: lastRequestBody,
+          usedTools
+        };
+      }
+
+      for (const toolCall of message.tool_calls) {
+        const { toolMessage, usedTool } = await callLesson17McpTool(mcpClient, toolCall);
+        usedTools.push(usedTool);
+        conversation.push(toolMessage);
+      }
+    }
+
+    throw new Error("DeepSeek exceeded the lesson 17 tool-call limit without producing a final answer.");
+  });
 }
 
 async function classifyMemoryEntry({ role, content, history, forceSave = false }) {
@@ -700,6 +1006,40 @@ const server = createServer(async (request, response) => {
         transport: "streamable-http",
         endpoint: context7McpUrl
       });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson17/pokemon-chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.input === "string" ? payload.input.trim() : "";
+      const messages = parseMessages(payload.messages);
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+
+      if (!prompt && !messages) {
+        sendJson(response, 400, { error: "Field 'input' or non-empty 'messages' is required." });
+        return;
+      }
+
+      if (!allowedModels.has(model)) {
+        sendJson(response, 500, {
+          error: "Only DeepSeek V4 chat completion models are allowed for this project."
+        });
+        return;
+      }
+
+      const result = await runLesson17PokemonAgent({
+        prompt: prompt || messages.at(-1)?.content || "",
+        model,
+        messages
+      });
+
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 17 proxy error.";
+      sendJson(response, 500, { error: message, mcpEndpoint: getLesson17McpUrl() });
     }
     return;
   }

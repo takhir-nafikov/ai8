@@ -179,6 +179,17 @@
 - Real `listTools` currently returns:
   - `resolve-library-id`
   - `query-docs`
+- Lesson 17 adds a separate local MCP server in `lessons/lesson-17/pokeapi-mcp-server.mjs`
+- Lesson 17 MCP server runs locally on `http://127.0.0.1:4174/mcp` by default
+- Lesson 17 MCP server exposes four Pokemon tools backed by PokeAPI v2:
+  - `get_pokemon_by_name_or_id`
+  - `search_pokemon_list`
+  - `get_pokemon_species`
+  - `get_type_info`
+- Lesson 17 MCP server caches PokeAPI responses in memory with TTL from `LESSON17_POKEAPI_CACHE_TTL_MS`
+- Dev server adds `POST /api/lesson17/pokemon-chat`
+- Lesson 17 backend uses the MCP client SDK to load tools from the local MCP server, passes them to DeepSeek as OpenAI-compatible function tools, executes returned tool calls through MCP, and returns both final answer and `usedTools`
+- Package script `npm run lesson17:mcp` starts the local Lesson 17 MCP server
 
 ## DeepSeek Notes
 

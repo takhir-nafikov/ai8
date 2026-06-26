@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Урок 17 · AI8</title>
+    <link rel="stylesheet" href="./lesson-17.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson-17.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Урок 17</p>
+          <h1>LLM с локальным MCP-сервером PokeAPI</h1>
+          <p>
+            Страница отправляет запрос в локальный backend, который подключает отдельный MCP-сервер
+            урока 17, даёт модели доступ к Pokémon tools и возвращает не только ответ LLM, но и список
+            реально вызванных инструментов.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/lesson17/pokemon-chat">
+          <label class="field-label" for="prompt-input">Введите запрос</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Сравни Pikachu и Bulbasaur по типам, способностям и базовым статам."
+            required
+          ></textarea>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить запрос</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+
+          <section class="review-block">
+            <p class="response-meta">Ответ LLM</p>
+            <div id="response-output" class="response-output response-output-scrollable">
+              Ответ появится здесь.
+            </div>
+          </section>
+
+          <section class="tools-block">
+            <div class="tools-block-header">
+              <h2>Использованные MCP tools</h2>
+              <p id="tools-caption" class="response-meta">
+                Список появится после запроса, если модель действительно вызовет инструменты.
+              </p>
+            </div>
+            <div id="tools-empty" class="response-output">Инструменты пока не использовались.</div>
+            <div id="tools-list" class="tools-list" hidden></div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>

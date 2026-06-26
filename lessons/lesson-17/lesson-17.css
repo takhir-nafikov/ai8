@@ -1,0 +1,60 @@
+@import "../lesson-16/lesson-16.css";
+
+.tools-block {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.tools-block-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.tools-block-header h2 {
+  margin: 0;
+}
+
+.tools-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tool-card {
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(73, 55, 31, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+
+.tool-name {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.tool-state {
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: rgba(201, 148, 87, 0.18);
+  color: #8b4c14;
+}
+
+.tool-state-error {
+  background: rgba(194, 83, 63, 0.14);
+  color: #8b2f1f;
+}
+
+.tool-meta {
+  margin: 0;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+}

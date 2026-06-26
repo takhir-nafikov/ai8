@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "node server/dev-server.mjs",
-    "preview": "node server/static-server.mjs"
+    "preview": "node server/static-server.mjs",
+    "lesson17:mcp": "node lessons/lesson-17/pokeapi-mcp-server.mjs"
   },
   "engines": {
     "node": ">=20"

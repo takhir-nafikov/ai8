@@ -12,6 +12,7 @@
   - работать как mock, если API ключ не задан;
   - работать как proxy к DeepSeek, если ключ задан в `.env`;
   - подключаться к публичному Context7 MCP через server-side endpoint и отдавать реальный список tools для урока 16;
+  - подключаться к локальному PokeAPI MCP-серверу урока 17 и проксировать tool calls в DeepSeek;
   - отдавать runtime-config через `/api/config`, чтобы страница видела текущие `endpoint` и `model`.
 
 ## Структура проекта
@@ -56,6 +57,8 @@ npm install
 
 Для урока 16 проект использует npm-зависимости официального MCP JavaScript SDK, поэтому `npm install` обязателен.
 
+Для урока 17 отдельный MCP-сервер поднимается как обычный Node-процесс через npm script и использует тот же установленный SDK на стороне клиента в `dev server`.
+
 ## Локальный запуск
 
 1. Скопируйте шаблон переменных окружения:
@@ -76,8 +79,16 @@ Copy-Item .env.example .env
 npm run dev
 ```
 
+3. В отдельном терминале запустите MCP-сервер урока 17:
+
+```bash
+npm run lesson17:mcp
+```
+
 Сайт будет доступен по адресу `http://localhost:4173`.
 Страницы уроков должны открываться через `http://localhost:4173`, а не через `file://...`, иначе submit/fetch и runtime-config будут работать некорректно.
+
+Локальный MCP endpoint урока 17 будет доступен по адресу `http://127.0.0.1:4174/mcp`.
 
 ## Запуск без npm
 
@@ -115,6 +126,8 @@ DEEPSEEK_API_URL=https://api.deepseek.com/chat/completions
 DEEPSEEK_MODEL=deepseek-v4-flash
 MOCK_DEEPSEEK=false
 CONTEXT7_API_KEY=
+LESSON17_MCP_PORT=4174
+LESSON17_POKEAPI_CACHE_TTL_MS=300000
 ```
 
 Потом запустите:
@@ -213,6 +226,66 @@ CONTEXT7_API_KEY=your_context7_api_key
 ```
 
 Если ключ не задан, урок всё равно пытается обратиться к публичному endpoint. В случае отказа Context7 UI покажет ошибку подключения без mock-данных.
+
+### Урок 17
+
+URL:
+
+- `http://localhost:4173/lessons/lesson-17/`
+
+Урок 17 показывает связку:
+
+- отдельный локальный MCP-сервер на `http://127.0.0.1:4174/mcp`;
+- backend endpoint `POST /api/lesson17/pokemon-chat`;
+- модель `DeepSeek`, которая получает tools через MCP client SDK и может вызывать их по ходу ответа;
+- UI-блок `Использованные MCP tools`, где отображаются реально выполненные вызовы.
+
+Доступные tools урока 17:
+
+- `get_pokemon_by_name_or_id`
+- `search_pokemon_list`
+- `get_pokemon_species`
+- `get_type_info`
+
+Пример запроса для страницы:
+
+- `Сравни Pikachu и Bulbasaur по типам, способностям и базовым статам.`
+- `Какие особенности у species eevee?`
+- `Покажи electric type и несколько pokemon этого типа.`
+
+Проверка локального MCP-сервера без браузера:
+
+```bash
+curl http://127.0.0.1:4174/health
+```
+
+На Windows PowerShell:
+
+```powershell
+Invoke-WebRequest http://127.0.0.1:4174/health | Select-Object -ExpandProperty Content
+```
+
+Проверка lesson 17 backend endpoint:
+
+```powershell
+$body = @{
+  model = "deepseek-v4-flash"
+  messages = @(
+    @{
+      role = "user"
+      content = "Сравни Pikachu и Bulbasaur по типам, способностям и базовым статам."
+    }
+  )
+} | ConvertTo-Json -Depth 6
+
+Invoke-RestMethod `
+  -Method Post `
+  -Uri http://127.0.0.1:4173/api/lesson17/pokemon-chat `
+  -ContentType "application/json" `
+  -Body $body | ConvertTo-Json -Depth 8
+```
+
+Если `DEEPSEEK_API_KEY` не задан или `MOCK_DEEPSEEK=true`, backend всё равно может показать демонстрационный ответ и список вызванных tools, но это будет mock-режим, а не реальный LLM-ответ.
 
 ## Почему нельзя хранить API key на GitHub Pages
 
