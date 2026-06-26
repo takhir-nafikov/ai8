@@ -25,6 +25,7 @@
   - `lessons/lesson-17/index.html`
   - `lessons/lesson-18/index.html`
   - `lessons/lesson-19/index.html`
+  - `lessons/lesson-20/index.html`
 - Main page now groups lessons into three weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
@@ -214,6 +215,16 @@
   - `POST /api/lesson19/save-response`
 - Lesson 19 frontend stores the target folder path in `localStorage` key `lesson19.folderPath`
 - Lesson 19 save tool requires an absolute folder path, creates the directory if missing, and saves each answer into a unique file named `llm-response-YYYY-MM-DD-HH-mm-ss.txt`
+- Lesson 20 is based visually on lesson 19, but removes the separate save button
+- Dev server adds lesson 20 endpoint:
+  - `POST /api/lesson20/auto-flow`
+- Lesson 20 runs two MCP steps automatically:
+  - first Pokémon MCP via the same flow as lesson 17
+  - then save-response MCP via the same save tool as lesson 19
+- Lesson 20 frontend stores the target folder path in `localStorage` key `lesson20.folderPath`
+- Lesson 20 UI shows per-step statuses for:
+  - `MCP покемонов`
+  - `MCP сохранения в файл`
 
 ## DeepSeek Notes
 

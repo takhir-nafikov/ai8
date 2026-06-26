@@ -1,0 +1,49 @@
+@import "../lesson-19/lesson-19.css";
+
+.flow-block {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.flow-steps {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 0.9rem;
+  align-items: center;
+}
+
+.flow-card {
+  min-height: 100%;
+}
+
+.flow-arrow {
+  color: var(--text-soft);
+  font-size: 1.4rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.tool-state-running {
+  background: rgba(222, 171, 91, 0.22);
+  color: #8a5a17;
+}
+
+.tool-state-success {
+  background: rgba(95, 168, 104, 0.18);
+  color: #236331;
+}
+
+.tool-state-error {
+  background: rgba(194, 83, 63, 0.14);
+  color: #8b2f1f;
+}
+
+@media (max-width: 720px) {
+  .flow-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .flow-arrow {
+    transform: rotate(90deg);
+  }
+}

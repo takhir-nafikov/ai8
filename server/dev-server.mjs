@@ -1125,6 +1125,90 @@ async function saveLesson19ResponseViaMcp({ folderPath, prompt, answer }) {
   });
 }
 
+async function runLesson20AutoFlow({ prompt, folderPath, model }) {
+  if (!folderPath) {
+    throw new Error("Field 'folderPath' is required.");
+  }
+
+  let pokemonResult;
+
+  try {
+    pokemonResult = await runLesson17PokemonAgent({
+      prompt,
+      model,
+      messages: null
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Pokemon MCP step failed.";
+    return {
+      answer: "",
+      model,
+      mocked: false,
+      requestBody: null,
+      filePath: "",
+      usedTools: [],
+      pokemonStep: {
+        status: "error",
+        detail: message
+      },
+      saveStep: {
+        status: "idle",
+        detail: "Шаг сохранения не был запущен из-за ошибки Pokémon MCP."
+      }
+    };
+  }
+
+  const usedTools = Array.isArray(pokemonResult.usedTools) ? [...pokemonResult.usedTools] : [];
+  const answer = pokemonResult.answer || "";
+
+  try {
+    const saveResult = await saveLesson19ResponseViaMcp({
+      folderPath,
+      prompt,
+      answer
+    });
+
+    if (Array.isArray(saveResult.usedTools)) {
+      usedTools.push(...saveResult.usedTools);
+    }
+
+    return {
+      answer,
+      model: pokemonResult.model,
+      mocked: pokemonResult.mocked,
+      requestBody: pokemonResult.requestBody,
+      filePath: saveResult.filePath,
+      usedTools,
+      pokemonStep: {
+        status: "success",
+        detail: "Pokémon MCP успешно отработал и вернул данные для финального ответа."
+      },
+      saveStep: {
+        status: "success",
+        detail: `Ответ сохранён в файл: ${saveResult.filePath}`
+      }
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Save MCP step failed.";
+    return {
+      answer,
+      model: pokemonResult.model,
+      mocked: pokemonResult.mocked,
+      requestBody: pokemonResult.requestBody,
+      filePath: "",
+      usedTools,
+      pokemonStep: {
+        status: "success",
+        detail: "Pokémon MCP успешно отработал и вернул данные для финального ответа."
+      },
+      saveStep: {
+        status: "error",
+        detail: message
+      }
+    };
+  }
+}
+
 function scheduleLesson18Repeat({ prompt, model, intervalMs }) {
   setTimeout(async () => {
     try {
@@ -1250,6 +1334,39 @@ const server = createServer(async (request, response) => {
     sendJson(response, 200, {
       items: lesson18History
     });
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson20/auto-flow") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+      const folderPath = typeof payload.folderPath === "string" ? payload.folderPath.trim() : "";
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+
+      if (!prompt) {
+        sendJson(response, 400, { error: "Field 'prompt' is required." });
+        return;
+      }
+
+      if (!folderPath) {
+        sendJson(response, 400, { error: "Field 'folderPath' is required." });
+        return;
+      }
+
+      const result = await runLesson20AutoFlow({
+        prompt,
+        folderPath,
+        model
+      });
+
+      const hasError = result.pokemonStep?.status === "error" || result.saveStep?.status === "error";
+      sendJson(response, hasError ? 500 : 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 20 proxy error.";
+      sendJson(response, 500, { error: message });
+    }
     return;
   }
 
