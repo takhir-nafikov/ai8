@@ -28,13 +28,14 @@
   - `lessons/lesson-20/index.html`
   - `lessons/lesson-22/index.html`
   - `lessons/lesson-23/index.html`
+  - `lessons/lesson-24/index.html`
   - `lessons/lesson-25/index.html`
 - Main page now groups lessons into weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
   - week 3: lessons 11-15
   - extra week 3 block: lessons 16-20
-  - week 4: days 22, 23, and 25
+  - week 4: days 22, 23, 24, and 25
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
@@ -56,6 +57,7 @@
   - `lessons/lesson-16/{index.html, lesson-16.css, lesson-16.js, context7-mcp-service.js}`
   - `lessons/lesson-22/{index.html, lesson-22.css, lesson-22.js, lesson-22-api.js}`
   - `lessons/lesson-23/{index.html, lesson-23.css, lesson-23.js, lesson-23-api.js}`
+  - `lessons/lesson-24/{index.html, lesson-24.css, lesson-24.js, lesson-24-api.js}`
   - `lessons/lesson-25/{index.html}`
 - Shared frontend files:
   - `src/main.js`
@@ -209,6 +211,8 @@
   - `POST /api/lesson22/chat`
 - Dev server adds lesson 23 endpoint:
   - `POST /api/lesson23/chat`
+- Dev server adds lesson 24 endpoint:
+  - `POST /api/lesson24/chat`
 - Lesson 18 stores response history only in process memory, without database or files
 - Lesson 18 schedules an automatic duplicate request on the server with `setTimeout` for either `5000` ms or `60000` ms
 - Each lesson 18 history item stores:
@@ -242,6 +246,8 @@
 - Lesson 23 reuses the Day 22 layout, but always works in RAG mode and adds `threshold` plus `topK` selects to control chunk filtering
 - Shared server RAG logic now lives in `server/rag-service.mjs`
 - Lesson 23 backend sorts chunks by cosine similarity, filters out scores below `threshold`, and then takes the first `topK` results before building the DeepSeek context
+- Lesson 24 reuses the Day 22 layout, always works through RAG, and shows the found chunks in a dedicated sources block with full available metadata
+- Lesson 24 backend reuses the shared RAG service and adds a low-data warning to the LLM prompt when matches are missing, too weak by similarity, or the collected context is too short
 - Lesson 25 is a placeholder navigation page without business logic yet
 
 ## DeepSeek Notes

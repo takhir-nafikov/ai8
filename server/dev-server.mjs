@@ -1439,6 +1439,42 @@ const server = createServer(async (request, response) => {
     return;
   }
 
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson24/chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+      const threshold = parseThreshold(payload.threshold, 0.5);
+      const topK = parseTopK(payload.topK, 3);
+
+      if (!prompt) {
+        sendJson(response, 400, { error: "Field 'prompt' is required." });
+        return;
+      }
+
+      const result = await runRagAnswer({
+        prompt,
+        model,
+        env,
+        rootDir,
+        runDeepSeekRequest: runStandardDeepSeekRequest,
+        threshold,
+        topK,
+        addInsufficientDataWarning: true
+      });
+
+      sendJson(response, 200, {
+        ...result,
+        mode: "rag-with-sources"
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 24 proxy error.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
   if (request.method === "POST" && requestUrl.pathname === "/api/lesson19/chat") {
     try {
       const rawBody = await readRequestBody(request);

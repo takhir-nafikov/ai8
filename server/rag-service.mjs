@@ -6,6 +6,10 @@ const defaultTopK = 3;
 const defaultThreshold = 0;
 const maxContextChars = 6000;
 const chunksFilePath = ["chunks", "chunks.json"];
+const defaultLowSimilarityThreshold = 0.55;
+const defaultMinContextChars = 500;
+const lowDataWarning =
+  "В найденных чанках недостаточно данных для полного ответа. Явно скажи об этом пользователю и не выдумывай отсутствующие детали.";
 
 let chunksCache = null;
 
@@ -143,6 +147,21 @@ function buildRagMessages({ prompt, contextBlock }) {
   ];
 }
 
+function buildRagMessagesWithWarning({ prompt, contextBlock, needsWarning }) {
+  return [
+    {
+      role: "system",
+      content: needsWarning
+        ? `You are a concise assistant for a study website. Use the provided RAG context when it is relevant. ${lowDataWarning}`
+        : "You are a concise assistant for a study website. Use the provided RAG context when it is relevant. If the context is insufficient, say so briefly and answer carefully without inventing facts."
+    },
+    {
+      role: "user",
+      content: `Контекст из локального RAG-индекса:\n\n${contextBlock || "Контекст не найден."}\n\nВопрос пользователя:\n${prompt}`
+    }
+  ];
+}
+
 function parseThreshold(rawValue, fallback = defaultThreshold) {
   const parsed = Number(rawValue);
   if (!Number.isFinite(parsed) || parsed < 0 || parsed > 1) {
@@ -159,6 +178,58 @@ function parseTopK(rawValue, fallback = defaultTopK) {
   }
 
   return parsed;
+}
+
+function normalizeMatchMetadata(chunk) {
+  const metadata = chunk?.metadata && typeof chunk.metadata === "object" ? chunk.metadata : {};
+  const sourcePath =
+    typeof metadata.source_path === "string" && metadata.source_path.trim()
+      ? metadata.source_path.trim()
+      : typeof metadata.file_path === "string" && metadata.file_path.trim()
+        ? metadata.file_path.trim()
+        : typeof chunk?.source_path === "string" && chunk.source_path.trim()
+          ? chunk.source_path.trim()
+          : "";
+  const chunkNumber =
+    Number.isInteger(metadata.chunk_index) ? metadata.chunk_index : Number.isInteger(chunk?.chunk_index) ? chunk.chunk_index : null;
+
+  return {
+    chunkId: chunk.chunk_id,
+    sourceFile: chunk.source_file,
+    sourcePath,
+    section: chunk.section,
+    similarity: Number(chunk.similarity.toFixed(4)),
+    textPreview: chunk.text.slice(0, 220),
+    text: chunk.text,
+    chunkNumber,
+    embeddingModel: chunk.embedding_model,
+    metadata
+  };
+}
+
+function assessRagSufficiency({ matches, contextBlock, lowSimilarityThreshold = defaultLowSimilarityThreshold, minContextChars = defaultMinContextChars }) {
+  const contextLength = typeof contextBlock === "string" ? contextBlock.trim().length : 0;
+  const bestSimilarity = matches.length > 0 ? matches[0].similarity : 0;
+  const hasMatches = matches.length > 0;
+
+  const reasons = [];
+  if (!hasMatches) {
+    reasons.push("no_matches");
+  }
+  if (hasMatches && bestSimilarity < lowSimilarityThreshold) {
+    reasons.push("low_similarity");
+  }
+  if (contextLength < minContextChars) {
+    reasons.push("short_context");
+  }
+
+  return {
+    isSufficient: reasons.length === 0,
+    warningNeeded: reasons.length > 0,
+    reasons,
+    bestSimilarity: Number(bestSimilarity.toFixed(4)),
+    contextLength
+  };
 }
 
 export async function findRelevantChunks({ prompt, env, rootDir, threshold = defaultThreshold, topK = defaultTopK }) {
@@ -199,14 +270,7 @@ export async function findRelevantChunks({ prompt, env, rootDir, threshold = def
     threshold: Number(normalizedThreshold.toFixed(3)),
     topK: normalizedTopK,
     contextBlock,
-    matches: matches.map((item) => ({
-      chunkId: item.chunk_id,
-      sourceFile: item.source_file,
-      section: item.section,
-      similarity: Number(item.similarity.toFixed(4)),
-      textPreview: item.text.slice(0, 220),
-      text: item.text
-    }))
+    matches: matches.map(normalizeMatchMetadata)
   };
 }
 
@@ -217,7 +281,8 @@ export async function runRagAnswer({
   rootDir,
   runDeepSeekRequest,
   threshold = defaultThreshold,
-  topK = defaultTopK
+  topK = defaultTopK,
+  addInsufficientDataWarning = false
 }) {
   const ragResult = await findRelevantChunks({
     prompt,
@@ -227,16 +292,27 @@ export async function runRagAnswer({
     topK
   });
 
-  if (!ragResult.contextBlock) {
+  if (!ragResult.contextBlock && !addInsufficientDataWarning) {
     throw new Error("Relevant RAG context was not found for the current threshold/top-k settings.");
   }
 
+  const sufficiency = assessRagSufficiency({
+    matches: ragResult.matches,
+    contextBlock: ragResult.contextBlock
+  });
+
   const result = await runDeepSeekRequest({
     input: "",
-    messages: buildRagMessages({
+    messages: addInsufficientDataWarning
+      ? buildRagMessagesWithWarning({
+          prompt,
+          contextBlock: ragResult.contextBlock,
+          needsWarning: sufficiency.warningNeeded
+        })
+      : buildRagMessages({
       prompt,
       contextBlock: ragResult.contextBlock
-    }),
+        }),
     model
   });
 
@@ -249,15 +325,10 @@ export async function runRagAnswer({
       threshold: ragResult.threshold,
       topK: ragResult.topK,
       contextPreview: ragResult.contextBlock,
-      matches: ragResult.matches.map((item) => ({
-        chunkId: item.chunkId,
-        sourceFile: item.sourceFile,
-        section: item.section,
-        similarity: item.similarity,
-        textPreview: item.textPreview
-      }))
+      sufficiency,
+      matches: ragResult.matches
     }
   };
 }
 
-export { parseThreshold, parseTopK };
+export { assessRagSufficiency, parseThreshold, parseTopK };
