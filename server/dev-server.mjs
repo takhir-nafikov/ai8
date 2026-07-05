@@ -3,6 +3,7 @@ import { appendFile, mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
+import { runLesson22Chat } from "./lesson22-rag.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1244,7 +1245,9 @@ const env = {
   DEEPSEEK_API_URL: process.env.DEEPSEEK_API_URL ?? localEnv.DEEPSEEK_API_URL ?? "https://api.deepseek.com/chat/completions",
   DEEPSEEK_MODEL: process.env.DEEPSEEK_MODEL ?? localEnv.DEEPSEEK_MODEL ?? "deepseek-v4-flash",
   DEV_SERVER_PORT: process.env.DEV_SERVER_PORT ?? localEnv.DEV_SERVER_PORT ?? "4173",
-  MOCK_DEEPSEEK: process.env.MOCK_DEEPSEEK ?? localEnv.MOCK_DEEPSEEK ?? "false"
+  MOCK_DEEPSEEK: process.env.MOCK_DEEPSEEK ?? localEnv.MOCK_DEEPSEEK ?? "false",
+  OLLAMA_BASE_URL: process.env.OLLAMA_BASE_URL ?? localEnv.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434",
+  OLLAMA_EMBED_MODEL: process.env.OLLAMA_EMBED_MODEL ?? localEnv.OLLAMA_EMBED_MODEL ?? ""
 };
 
 const server = createServer(async (request, response) => {
@@ -1365,6 +1368,36 @@ const server = createServer(async (request, response) => {
       sendJson(response, hasError ? 500 : 200, result);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected lesson 20 proxy error.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson22/chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+      const useRag = payload.useRag !== false;
+
+      if (!prompt) {
+        sendJson(response, 400, { error: "Field 'prompt' is required." });
+        return;
+      }
+
+      const result = await runLesson22Chat({
+        prompt,
+        useRag,
+        model,
+        env,
+        rootDir,
+        runDeepSeekRequest: runStandardDeepSeekRequest
+      });
+
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 22 proxy error.";
       sendJson(response, 500, { error: message });
     }
     return;
