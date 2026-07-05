@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { runLesson22Chat } from "./lesson22-rag.mjs";
+import { parseThreshold, parseTopK, runRagAnswer } from "./rag-service.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1398,6 +1399,41 @@ const server = createServer(async (request, response) => {
       sendJson(response, 200, result);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected lesson 22 proxy error.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/lesson23/chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+      const model = typeof payload.model === "string" && payload.model.trim() ? payload.model.trim() : env.DEEPSEEK_MODEL;
+      const threshold = parseThreshold(payload.threshold, 0.5);
+      const topK = parseTopK(payload.topK, 3);
+
+      if (!prompt) {
+        sendJson(response, 400, { error: "Field 'prompt' is required." });
+        return;
+      }
+
+      const result = await runRagAnswer({
+        prompt,
+        model,
+        env,
+        rootDir,
+        runDeepSeekRequest: runStandardDeepSeekRequest,
+        threshold,
+        topK
+      });
+
+      sendJson(response, 200, {
+        ...result,
+        mode: "always-rag"
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected lesson 23 proxy error.";
       sendJson(response, 500, { error: message });
     }
     return;

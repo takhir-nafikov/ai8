@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>День 23 · AI8</title>
+    <link rel="stylesheet" href="./lesson-23.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson-23.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">День 23</p>
+          <h1>RAG с настройкой threshold и top-k</h1>
+          <p>
+            Страница повторяет UX дня 22, но всегда работает через локальный RAG-контекст из
+            <code>chunks/chunks.json</code>. Для embeddings используется локальный <code>ollama</code>
+            на дефолтном порте, а параметры поиска задаются через <code>threshold</code> и <code>topK</code>.
+          </p>
+        </div>
+
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/lesson23/chat">
+          <label class="field-label" for="prompt-input">Введите вопрос</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Какие состояния описаны в приложении и как они влияют на бой?"
+            required
+          ></textarea>
+
+          <div class="settings-grid">
+            <label class="setting-field" for="threshold-select">
+              <span class="field-label">Порог отсечения нерелевантных результатов</span>
+              <select id="threshold-select" name="threshold" class="text-input">
+                <option value="0.000">0.000</option>
+                <option value="0.100">0.100</option>
+                <option value="0.200">0.200</option>
+                <option value="0.300">0.300</option>
+                <option value="0.400">0.400</option>
+                <option value="0.500" selected>0.500</option>
+                <option value="0.600">0.600</option>
+                <option value="0.700">0.700</option>
+                <option value="0.800">0.800</option>
+                <option value="0.900">0.900</option>
+                <option value="1.000">1.000</option>
+              </select>
+            </label>
+
+            <label class="setting-field" for="topk-select">
+              <span class="field-label">Top-K результатов</span>
+              <select id="topk-select" name="topK" class="text-input">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p class="response-meta">
+            Параметры поиска: <strong id="search-params-value">threshold 0.500 · topK 3</strong>
+          </p>
+
+          <section class="review-block">
+            <p class="response-meta">Ответ модели</p>
+            <div id="response-output" class="response-output response-output-scrollable">
+              Ответ появится здесь.
+            </div>
+          </section>
+
+          <section class="tools-block">
+            <div class="tools-block-header">
+              <h2>RAG-контекст</h2>
+              <p id="rag-caption" class="response-meta">
+                Здесь будет показан найденный контекст и итоговые совпадения после фильтрации по threshold/top-k.
+              </p>
+            </div>
+            <div id="rag-empty" class="response-output">RAG-контекст пока не использовался.</div>
+            <div id="rag-result" class="tools-list" hidden></div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
