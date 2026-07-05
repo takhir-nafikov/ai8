@@ -225,6 +225,7 @@
 - Lesson 20 UI shows per-step statuses for:
   - `MCP покемонов`
   - `MCP сохранения в файл`
+-Lesson 21: Added generated PDF chunks to the chunks/ directory and the Python generation script to the scripts/ directory.
 
 ## DeepSeek Notes
 
