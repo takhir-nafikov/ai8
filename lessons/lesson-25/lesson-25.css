@@ -1,0 +1,66 @@
+@import "../lesson-24/lesson-24.css";
+
+.history-modal[hidden] {
+  display: none;
+}
+
+.history-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+}
+
+.history-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(41, 28, 14, 0.48);
+}
+
+.history-dialog {
+  position: relative;
+  z-index: 1;
+  width: min(860px, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  margin: 1rem auto;
+  padding: 1.1rem;
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(73, 55, 31, 0.16);
+  background: #fffaf3;
+  box-shadow: 0 28px 60px rgba(41, 28, 14, 0.22);
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.history-header h2 {
+  margin: 0;
+}
+
+.history-close-button {
+  flex-shrink: 0;
+}
+
+.history-item {
+  display: grid;
+  gap: 0.6rem;
+}
+
+@media (max-width: 720px) {
+  .history-dialog {
+    width: calc(100vw - 1rem);
+    margin: 0.5rem auto;
+    max-height: calc(100vh - 1rem);
+    padding: 0.9rem;
+  }
+
+  .history-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

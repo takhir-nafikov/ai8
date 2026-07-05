@@ -58,7 +58,7 @@
   - `lessons/lesson-22/{index.html, lesson-22.css, lesson-22.js, lesson-22-api.js}`
   - `lessons/lesson-23/{index.html, lesson-23.css, lesson-23.js, lesson-23-api.js}`
   - `lessons/lesson-24/{index.html, lesson-24.css, lesson-24.js, lesson-24-api.js}`
-  - `lessons/lesson-25/{index.html}`
+  - `lessons/lesson-25/{index.html, lesson-25.css, lesson-25.js, lesson-25-api.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -213,6 +213,8 @@
   - `POST /api/lesson23/chat`
 - Dev server adds lesson 24 endpoint:
   - `POST /api/lesson24/chat`
+- Dev server adds lesson 25 endpoint:
+  - `POST /api/lesson25/chat`
 - Lesson 18 stores response history only in process memory, without database or files
 - Lesson 18 schedules an automatic duplicate request on the server with `setTimeout` for either `5000` ms or `60000` ms
 - Each lesson 18 history item stores:
@@ -248,7 +250,12 @@
 - Lesson 23 backend sorts chunks by cosine similarity, filters out scores below `threshold`, and then takes the first `topK` results before building the DeepSeek context
 - Lesson 24 reuses the Day 22 layout, always works through RAG, and shows the found chunks in a dedicated sources block with full available metadata
 - Lesson 24 backend reuses the shared RAG service and adds a low-data warning to the LLM prompt when matches are missing, too weak by similarity, or the collected context is too short
-- Lesson 25 is a placeholder navigation page without business logic yet
+- Lesson 25 combines Day 22, Day 23, and Day 24 features:
+  - always-on RAG
+  - `threshold` and `topK` controls
+  - source chunk cards with metadata
+  - local short history with modal viewer
+- Lesson 25 stores history in browser `localStorage` and keeps only compact records with prompt, answer, chunk IDs, parameters, and timestamp
 
 ## DeepSeek Notes
 

@@ -4,7 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>День 25 · AI8</title>
-    <link rel="stylesheet" href="../lesson-22/lesson-22.css" />
+    <link rel="stylesheet" href="./lesson-25.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./lesson-25.js"></script>
   </head>
   <body>
     <main class="page-shell">
@@ -15,14 +17,106 @@
       <section class="panel lesson-panel">
         <div class="panel-header">
           <p class="eyebrow">День 25</p>
-          <h1>Заглушка</h1>
-          <p>Эта страница добавлена как навигационная заглушка. Полноценная логика для дня 25 появится позже.</p>
+          <h1>RAG с настройками поиска, источниками и историей</h1>
+          <p>
+            Страница объединяет уроки 22, 23 и 24: вопрос всегда проходит через локальный RAG,
+            найденные чанки показываются отдельно, а короткая история запросов открывается по кнопке.
+          </p>
         </div>
 
-        <section class="response-panel" aria-live="polite">
-          <div class="response-output">Здесь пока только заглушка без отдельной бизнес-логики.</div>
+        <form id="lesson-form" class="lesson-form" method="post" action="/api/lesson25/chat">
+          <label class="field-label" for="prompt-input">Введите вопрос</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Что найденные документы говорят про укрытие, урон, состояния и ограничения контекста?"
+            required
+          ></textarea>
+
+          <div class="settings-grid">
+            <label class="setting-field" for="threshold-select">
+              <span class="field-label">Порог отсечения нерелевантных результатов</span>
+              <select id="threshold-select" name="threshold" class="text-input">
+                <option value="0.000">0.000</option>
+                <option value="0.100">0.100</option>
+                <option value="0.200">0.200</option>
+                <option value="0.300">0.300</option>
+                <option value="0.400">0.400</option>
+                <option value="0.500" selected>0.500</option>
+                <option value="0.600">0.600</option>
+                <option value="0.700">0.700</option>
+                <option value="0.800">0.800</option>
+                <option value="0.900">0.900</option>
+                <option value="1.000">1.000</option>
+              </select>
+            </label>
+
+            <label class="setting-field" for="topk-select">
+              <span class="field-label">Количество чанков</span>
+              <select id="topk-select" name="topK" class="text-input">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+            <button id="history-button" class="secondary-button" type="button">Показать историю</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="config-error" class="config-error" hidden></p>
+          <p class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+          <p class="response-meta">
+            Параметры поиска: <strong id="search-params-value">threshold 0.500 · topK 3</strong>
+          </p>
+
+          <section class="review-block">
+            <p class="response-meta">Ответ модели</p>
+            <div id="response-output" class="response-output response-output-scrollable">
+              Ответ появится здесь.
+            </div>
+          </section>
+
+          <section class="tools-block">
+            <div class="tools-block-header">
+              <h2>Использованные чанки</h2>
+              <p id="sources-caption" class="response-meta">
+                Здесь будут показаны найденные источники, similarity score и все доступные метаданные чанков.
+              </p>
+            </div>
+            <div id="sources-empty" class="response-output">Источники пока не загружались.</div>
+            <div id="sources-list" class="tools-list" hidden></div>
+          </section>
         </section>
       </section>
     </main>
+
+    <div id="history-modal" class="history-modal" hidden>
+      <div id="history-overlay" class="history-overlay"></div>
+      <section class="history-dialog" role="dialog" aria-modal="true" aria-labelledby="history-title">
+        <div class="history-header">
+          <h2 id="history-title">История запросов</h2>
+          <button id="history-close-button" class="secondary-button history-close-button" type="button">Закрыть</button>
+        </div>
+        <p class="response-meta">Сохраняются только короткие записи: вопрос, ответ, ID чанков и выбранные параметры.</p>
+        <div id="history-empty" class="response-output">История пока пуста.</div>
+        <div id="history-list" class="tools-list" hidden></div>
+      </section>
+    </div>
   </body>
 </html>
