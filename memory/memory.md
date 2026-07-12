@@ -6,6 +6,7 @@
 - Frontend stack: plain HTML, CSS, vanilla JS.
 - Main pages:
   - `index.html`
+  - `lessons/week-5/index.html`
   - `lessons/lesson1/index.html`
   - `lessons/lesson2/index.html`
   - `lessons/lesson3/index.html`
@@ -30,12 +31,16 @@
   - `lessons/lesson-23/index.html`
   - `lessons/lesson-24/index.html`
   - `lessons/lesson-25/index.html`
+- Week 5 page:
+  - `lessons/week-5/index.html`
+  - combines lessons 26 and 27 into one standalone page with local Ollama chat
 - Main page now groups lessons into weekly sections:
   - week 1: lessons 1-5
   - week 2: lessons 6-10
   - week 3: lessons 11-15
   - extra week 3 block: lessons 16-20
   - week 4: days 22, 23, 24, and 25
+  - week 5: lessons 26 and 27 combined on one page
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
@@ -59,6 +64,7 @@
   - `lessons/lesson-23/{index.html, lesson-23.css, lesson-23.js, lesson-23-api.js}`
   - `lessons/lesson-24/{index.html, lesson-24.css, lesson-24.js, lesson-24-api.js}`
   - `lessons/lesson-25/{index.html, lesson-25.css, lesson-25.js, lesson-25-api.js}`
+  - `lessons/week-5/{index.html, week-5.css, week-5.js, week-5-api.js}`
 - Shared frontend files:
   - `src/main.js`
   - `src/config.js`
@@ -215,6 +221,10 @@
   - `POST /api/lesson24/chat`
 - Dev server adds lesson 25 endpoint:
   - `POST /api/lesson25/chat`
+- Dev server adds week 5 endpoint:
+  - `POST /api/week5/ollama-chat`
+- Week 5 backend calls local Ollama chat API at `http://127.0.0.1:11434/api/chat`
+- Week 5 frontend displays the Ollama answer from response field `message.content`
 - Lesson 18 stores response history only in process memory, without database or files
 - Lesson 18 schedules an automatic duplicate request on the server with `setTimeout` for either `5000` ms or `60000` ms
 - Each lesson 18 history item stores:

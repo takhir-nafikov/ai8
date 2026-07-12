@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { runLesson22Chat } from "./lesson22-rag.mjs";
+import { requestOllamaChat } from "./ollama-chat-service.mjs";
 import { parseThreshold, parseTopK, runRagAnswer } from "./rag-service.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1506,6 +1507,30 @@ const server = createServer(async (request, response) => {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unexpected lesson 25 proxy error.";
+      sendJson(response, 500, { error: message });
+    }
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/week5/ollama-chat") {
+    try {
+      const rawBody = await readRequestBody(request);
+      const payload = JSON.parse(rawBody || "{}");
+      const prompt = typeof payload.prompt === "string" ? payload.prompt.trim() : "";
+
+      if (!prompt) {
+        sendJson(response, 400, { error: "Field 'prompt' is required." });
+        return;
+      }
+
+      const result = await requestOllamaChat({
+        prompt,
+        baseUrl: env.OLLAMA_BASE_URL
+      });
+
+      sendJson(response, 200, result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unexpected Week 5 Ollama proxy error.";
       sendJson(response, 500, { error: message });
     }
     return;

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Неделя 5 · AI8</title>
+    <link rel="stylesheet" href="./week-5.css" />
+    <script src="../../public/app-config.js"></script>
+    <script type="module" src="./week-5.js"></script>
+  </head>
+  <body>
+    <main class="page-shell">
+      <nav class="back-nav">
+        <a class="back-link" href="../../index.html">← На главную</a>
+      </nav>
+
+      <section class="panel lesson-panel">
+        <div class="panel-header">
+          <p class="eyebrow">Дни 26–27</p>
+          <h1>Локальный чат с Ollama</h1>
+        </div>
+
+        <form id="week5-form" class="lesson-form" method="post" action="/api/week5/ollama-chat">
+          <label class="field-label" for="prompt-input">Введите запрос</label>
+          <textarea
+            id="prompt-input"
+            name="prompt"
+            class="text-input"
+            rows="7"
+            placeholder="Например: Объясни простыми словами, чем отличается MCP от обычного REST API."
+            required
+          ></textarea>
+
+          <div class="button-row">
+            <button id="submit-button" class="primary-button" type="submit">Отправить</button>
+          </div>
+        </form>
+
+        <section class="response-panel" aria-live="polite" aria-atomic="true">
+          <div class="status-row">
+            <span class="status-label">Статус</span>
+            <span id="status-badge" class="status-badge status-idle">Ожидание</span>
+          </div>
+          <p id="request-error" class="config-error" hidden></p>
+          <p class="response-meta">
+            Endpoint: <code id="api-endpoint-label"></code> · Model: <code id="model-label"></code>
+          </p>
+
+          <section class="review-block">
+            <p class="response-meta">Ответ модели</p>
+            <div id="response-output" class="response-output response-output-scrollable">
+              Ответ появится здесь.
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+  </body>
+</html>
