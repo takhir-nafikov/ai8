@@ -32,6 +32,7 @@
   - `lessons/lesson-24/index.html`
   - `lessons/lesson-25/index.html`
   - `lessons/lesson-28/index.html`
+  - `lessons/lesson-29/index.html`
 - Week 5 page:
   - `lessons/week-5/index.html`
   - combines lessons 26 and 27 into one standalone page with local Ollama chat
@@ -41,7 +42,7 @@
   - week 3: lessons 11-15
   - extra week 3 block: lessons 16-20
   - week 4: days 22, 23, 24, and 25
-  - week 5: days 26-28
+  - week 5: days 26-29
 - Legacy compatibility page:
   - `lessons/lesson-1.html` -> redirects to `lessons/lesson1/`
 - Lesson structure:
@@ -66,6 +67,7 @@
   - `lessons/lesson-24/{index.html, lesson-24.css, lesson-24.js, lesson-24-api.js}`
   - `lessons/lesson-25/{index.html, lesson-25.css, lesson-25.js, lesson-25-api.js}`
   - `lessons/lesson-28/{index.html, lesson-28.css, lesson-28.js, lesson-28-api.js}`
+  - `lessons/lesson-29/{index.html, lesson-29.css, lesson-29.js, lesson-29-api.js}`
   - `lessons/week-5/{index.html, week-5.css, week-5.js, week-5-api.js}`
 - Shared frontend files:
   - `src/main.js`
@@ -225,8 +227,12 @@
   - `POST /api/lesson25/chat`
 - Dev server adds lesson 28 endpoint:
   - `POST /api/lesson28/chat`
+- Dev server adds lesson 29 endpoint:
+  - `POST /api/lesson29/chat`
 - Dev server adds week 5 endpoint:
   - `POST /api/week5/ollama-chat`
+- Lesson 29 reuses the same direct Ollama chat pattern as days 26-27
+- Lesson 29 adds a D&D 5e system prompt and sends Ollama option `temperature: 0`
 - Lesson 28 reuses shared server RAG logic from `server/rag-service.mjs`
 - Lesson 28 finds relevant chunks from `chunks/chunks.json`, builds context, and sends the final chat request to local Ollama
 - Lesson 28 backend uses the Ollama chat response field `message.content`

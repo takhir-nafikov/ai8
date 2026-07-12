@@ -13,6 +13,20 @@ function extractOllamaAnswer(payload) {
   return typeof content === "string" ? content.trim() : "";
 }
 
+function normalizeOptions(options) {
+  if (!options || typeof options !== "object" || Array.isArray(options)) {
+    return null;
+  }
+
+  const normalized = {};
+
+  if (typeof options.temperature === "number" && Number.isFinite(options.temperature)) {
+    normalized.temperature = options.temperature;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : null;
+}
+
 function normalizeMessages(messages) {
   if (!Array.isArray(messages) || messages.length === 0) {
     return null;
@@ -40,11 +54,13 @@ function normalizeMessages(messages) {
 export async function requestOllamaChat({
   prompt,
   messages,
+  options,
   baseUrl = DEFAULT_OLLAMA_BASE_URL,
   model = DEFAULT_OLLAMA_CHAT_MODEL
 }) {
   const trimmedPrompt = typeof prompt === "string" ? prompt.trim() : "";
   const normalizedMessages = normalizeMessages(messages);
+  const normalizedOptions = normalizeOptions(options);
 
   if (!trimmedPrompt && !normalizedMessages) {
     throw new Error("Field 'prompt' or non-empty 'messages' is required.");
@@ -64,6 +80,10 @@ export async function requestOllamaChat({
       ],
     stream: false
   };
+
+  if (normalizedOptions) {
+    requestBody.options = normalizedOptions;
+  }
 
   const response = await fetch(chatUrl, {
     method: "POST",
