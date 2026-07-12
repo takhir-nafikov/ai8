@@ -13,26 +13,55 @@ function extractOllamaAnswer(payload) {
   return typeof content === "string" ? content.trim() : "";
 }
 
+function normalizeMessages(messages) {
+  if (!Array.isArray(messages) || messages.length === 0) {
+    return null;
+  }
+
+  const normalized = messages
+    .map((message) => {
+      const role = typeof message?.role === "string" ? message.role.trim() : "";
+      const content = typeof message?.content === "string" ? message.content.trim() : "";
+
+      if (!role || !content) {
+        return null;
+      }
+
+      return {
+        role,
+        content
+      };
+    })
+    .filter(Boolean);
+
+  return normalized.length > 0 ? normalized : null;
+}
+
 export async function requestOllamaChat({
   prompt,
+  messages,
   baseUrl = DEFAULT_OLLAMA_BASE_URL,
   model = DEFAULT_OLLAMA_CHAT_MODEL
 }) {
   const trimmedPrompt = typeof prompt === "string" ? prompt.trim() : "";
-  if (!trimmedPrompt) {
-    throw new Error("Field 'prompt' is required.");
+  const normalizedMessages = normalizeMessages(messages);
+
+  if (!trimmedPrompt && !normalizedMessages) {
+    throw new Error("Field 'prompt' or non-empty 'messages' is required.");
   }
 
   const normalizedBaseUrl = normalizeBaseUrl(baseUrl);
   const chatUrl = `${normalizedBaseUrl}/api/chat`;
   const requestBody = {
     model,
-    messages: [
-      {
-        role: "user",
-        content: trimmedPrompt
-      }
-    ],
+    messages:
+      normalizedMessages ??
+      [
+        {
+          role: "user",
+          content: trimmedPrompt
+        }
+      ],
     stream: false
   };
 
@@ -57,7 +86,8 @@ export async function requestOllamaChat({
   return {
     answer,
     model: typeof payload?.model === "string" && payload.model.trim() ? payload.model.trim() : model,
-    endpoint: chatUrl
+    endpoint: chatUrl,
+    requestBody
   };
 }
 
